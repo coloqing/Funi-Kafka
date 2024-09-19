@@ -15,7 +15,7 @@ using SqlSugar;
 using DataBase.Entity;
 
 
-namespace KAFKA_PARSE
+namespace SIV_Kafka
 {
     public class KafkaParse
     {
@@ -25,14 +25,14 @@ namespace KAFKA_PARSE
 
         static KafkaParse()
         {
-            //var config = new MapperConfiguration(cfg =>
-            //{
-            //    cfg.CreateMap<TB_KAFKA_DATAS, TB_PARSING_DATAS>();
-            //});
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.CreateMap<KAFKA_DATA, TB_PARSING_DATAS>();
+            });
 
-            //config.CompileMappings();
+            config.CompileMappings();
 
-            //_mapper = config.CreateMapper();
+            _mapper = config.CreateMapper();
         }
 
         //获取json数据
@@ -43,38 +43,30 @@ namespace KAFKA_PARSE
         /// </summary>
         /// <param name="kafkaString">16进制字符串</param>
         /// <returns></returns>
-        public static List<KAFKA_DATA> GetKafkaData(TB_YSBW ysbw)
+        public static List<TB_PARSING_DATAS> GetKafkaData(TB_YSBW ysbw)
         { 
             try
             {
-                var result = new List<KAFKA_DATA>();
+                var kfkData = new List<KAFKA_DATA>();
+                var result = new List<TB_PARSING_DATAS>();
 
                 // 将16进制字符串转换为字节数组  
                 byte[] byteArray = StringToByteArray(ysbw.ysbw);
-            
+
+                //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(timespang).DateTime;
+
                 //项目ID
                 int xlh = ByteToInt(byteArray, 2, 2);
                 //列车ID
                 int lchNum = ByteToInt(byteArray, 6, 2);
 
-
                 // 查找帧头AA55的索引（注意，这里的索引是基于字节数组的）  
                 List<int> AA55List = FindFrameHeader(byteArray, 0xAA, 0x55);
                 //添加0-100字节偏移量
-                List<int> indexLength = new() { 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, 1, 1, 1, 1, 76 };
+                List<int> indexLength = new() { 2,2,2,1,1,2,2,2};
                 //添加100-128字节偏移量
-                indexLength.AddRange(getIndex(14, 2));
-                //添加128-162字节偏移量
-                indexLength.AddRange(getIndex(34, 1));
-                //添加162-168字节偏移量
-                indexLength.AddRange(new List<int> { 2, 2, 2 });
-                //添加168-252字节偏移量
-                indexLength.AddRange(getIndex(21, 4));
-                //添加252 - 292字节偏移量
-                indexLength.AddRange(new List<int> { 1, 1, 38 });
-                //添加292 - 300字节偏移量
-                indexLength.AddRange(getIndex(4, 2));
-
+                indexLength.AddRange(getIndex(115, 4));
+                
                 foreach (var item in AA55List)
                 {
                     List<int> data = new();
@@ -84,74 +76,17 @@ namespace KAFKA_PARSE
                         int byteValue = ByteToInt(byteArray, startIndex, length);
                         startIndex += length;
                         data.Add(byteValue);
-                    }
-                    //添加通风模式
-                    data.AddRange(GetBitsFromByte(byteArray[item + 300], 8));
-                    //添加控制模式和自检
-                    data.AddRange(GetBitsFromByte(byteArray[item + 301], 8));
-                    //添加部件状态
-                    data.AddRange(GetBitsFromByte(byteArray[item + 302], 8));
-                    //添加紧急通风状态
-                    data.Add((byteArray[item + 303] >> 7) & 1);
-                    //添加故障信息
-                    data.AddRange(GetBitsFromByte(byteArray[item + 320], 8));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 321], 8));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 322], 8));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 323], 8));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 324], 8));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 325], 7));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 326], 3));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 327], 8));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 328], 5));
-                    data.AddRange(GetBitsFromByte(byteArray[item + 329], 6));
-                    //CRC
-                    data.Add(ByteToInt(byteArray, item + 398, 2));
-
+                    }                  
                     //把解析的值赋值给实体
                     var ParsingData = PopulateBFromList<KAFKA_DATA>(data);
-
-                    //获取控制器时间
-                    var rq = $"{ParsingData.Year + 2000}-{ParsingData.Month}-{ParsingData.Day} {ParsingData.Hour}:{ParsingData.Minute}:{ParsingData.Second}";
-                    var rqTime = DateTime.Parse(rq);
-                    //获取软件版本
-                    var v = ParseVersion(getByte(byteArray, item + 102, 2));
-
-                    //获取配置的json数据
-                    var cxhKeyval = LoadJsonData("GZML7");
-                    //获取11号线
-                    var GZML11 = GetLch();
-
-                    //获取车厢号别名
-                    var cxh01 = cxhKeyval[ParsingData.yxtzjid.ToString()];
-                    var cxhBl = cxh01.Substring(1, 1).ToString() == "1" ? cxhKeyval[lchNum.ToString()].Substring(0, 3) : cxhKeyval[lchNum.ToString()].Substring(3, 3);
-                    //获取车厢号
-                    var cxh = cxhKeyval["xlh"] + cxh01.Substring(0, 1) + cxhBl;
-                    var lch = cxhKeyval["xlh"] + cxhKeyval[lchNum.ToString()]; //7号线
-                                                                               //var lch = GZML11.Item1[lchNum.ToString()];
-                                                                               //var cxh = GZML11.Item2[lch + cxh01];
-
-                    //获取通风模式
-                    var ms = GetBitsFromByte(byteArray[item + 300], 8);
-                    int tfms = ms.IndexOf(1);
-                    var parseData = GetParseData(ParsingData);
-                    parseData.tfms = tfms;
-                    parseData.rq = rqTime;
-                    parseData.create_time = rqTime;
-                    parseData.software_version = v;
-                    parseData.lch = lch;
-                    parseData.cxh = cxh;
-                    parseData.cxhName = cxh01;
-                    parseData.yxtzjid = ((parseData.yxtzjid & 1) == 1) ? 1 : 2;
-                    parseData.device_code = cxh + "_" + parseData.yxtzjid;
-                    parseData.id = SnowFlakeSingle.Instance.NextId();
-                    result.Add(parseData);
+                    kfkData.Add(ParsingData);
                 }
+                result = _mapper.Map<List<TB_PARSING_DATAS>>(kfkData);
 
                 return result;
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.ToString());
             }          
             
@@ -163,67 +98,67 @@ namespace KAFKA_PARSE
         /// <param name="kafkaData"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private static TB_PARSING_DATAS GetParseData(TB_KAFKA_DATAS kafkaData)
-        {
-            if (kafkaData == null)
-            {
-                throw new Exception("TB_KAFKA_DATAS 参数不能为空");
-            }
-            // 在静态构造函数中配置AutoMapper 
+        //private static TB_PARSING_DATAS GetParseData(TB_KAFKA_DATAS kafkaData)
+        //{
+        //    if (kafkaData == null)
+        //    {
+        //        throw new Exception("TB_KAFKA_DATAS 参数不能为空");
+        //    }
+        //    // 在静态构造函数中配置AutoMapper 
 
-            var parseMapData = _mapper.Map<TB_PARSING_DATAS>(kafkaData);          
-            parseMapData.jz1mbwd = Math.Round(kafkaData.jz1mbwd * 0.1, 1);
-            parseMapData.jz1kswdcgq1wd = Math.Round(kafkaData.jz1kswdcgq1wd * 0.1, 1);
-            parseMapData.jz1kswd = Math.Round(kafkaData.jz1kswd * 0.1, 1);
-            parseMapData.jz1swwd = Math.Round(kafkaData.jz1swwd * 0.1, 1);
-            parseMapData.jz1sfcgq1wd = Math.Round(kafkaData.jz1sfcgq1wd * 0.1, 1);
-            parseMapData.jz1sfcgq2wd = Math.Round(kafkaData.jz1sfcgq2wd * 0.1, 1);
-            parseMapData.jz1ysj1pqwd = Math.Round(kafkaData.jz1ysj1pqwd * 0.1, 1);
-            parseMapData.jz1ysj2pqwd = Math.Round(kafkaData.jz1ysj2pqwd * 0.1, 1);
-            parseMapData.jz1ysj1xqwd = Math.Round(kafkaData.jz1ysj1xqwd * 0.1, 1);
-            parseMapData.jz1ysj2xqwd = Math.Round(kafkaData.jz1ysj2xqwd * 0.1, 1);
-            parseMapData.jz1kqzljcmkwd = Math.Round(kafkaData.jz1kqzljcmkwd * 0.1, 1);
+        //    var parseMapData = _mapper.Map<TB_PARSING_DATAS>(kafkaData);          
+        //    parseMapData.jz1mbwd = Math.Round(kafkaData.jz1mbwd * 0.1, 1);
+        //    parseMapData.jz1kswdcgq1wd = Math.Round(kafkaData.jz1kswdcgq1wd * 0.1, 1);
+        //    parseMapData.jz1kswd = Math.Round(kafkaData.jz1kswd * 0.1, 1);
+        //    parseMapData.jz1swwd = Math.Round(kafkaData.jz1swwd * 0.1, 1);
+        //    parseMapData.jz1sfcgq1wd = Math.Round(kafkaData.jz1sfcgq1wd * 0.1, 1);
+        //    parseMapData.jz1sfcgq2wd = Math.Round(kafkaData.jz1sfcgq2wd * 0.1, 1);
+        //    parseMapData.jz1ysj1pqwd = Math.Round(kafkaData.jz1ysj1pqwd * 0.1, 1);
+        //    parseMapData.jz1ysj2pqwd = Math.Round(kafkaData.jz1ysj2pqwd * 0.1, 1);
+        //    parseMapData.jz1ysj1xqwd = Math.Round(kafkaData.jz1ysj1xqwd * 0.1, 1);
+        //    parseMapData.jz1ysj2xqwd = Math.Round(kafkaData.jz1ysj2xqwd * 0.1, 1);
+        //    parseMapData.jz1kqzljcmkwd = Math.Round(kafkaData.jz1kqzljcmkwd * 0.1, 1);
 
-            parseMapData.jz1ysj1gyyl = (kafkaData.jz1ysj1gyyl * 20);
-            parseMapData.jz1ysj1dyyl = (kafkaData.jz1ysj1dyyl * 20);
-            parseMapData.jz1ysj2gyyl = (kafkaData.jz1ysj2gyyl * 20);
-            parseMapData.jz1ysj2dyyl = (kafkaData.jz1ysj2dyyl * 20);
-            parseMapData.jz1lwylz = (kafkaData.jz1lwylz * 2);
-            parseMapData.jz1tfj1uxdlz = Math.Round(kafkaData.jz1tfj1uxdlz * 0.1, 1);
-            parseMapData.jz1tfj1vxdlz = Math.Round(kafkaData.jz1tfj1vxdlz * 0.1, 1);
-            parseMapData.jz1tfj1wxdlz = Math.Round(kafkaData.jz1tfj1wxdlz * 0.1, 1);
-            parseMapData.jz1tfj2uxdlz = Math.Round(kafkaData.jz1tfj2uxdlz * 0.1, 1);
-            parseMapData.jz1tfj2vxdlz = Math.Round(kafkaData.jz1tfj2vxdlz * 0.1, 1);
-            parseMapData.jz1tfj2wxdlz = Math.Round(kafkaData.jz1tfj2wxdlz * 0.1, 1);
-            parseMapData.jz1lnfj1uxdlz = Math.Round(kafkaData.jz1lnfj1uxdlz * 0.1, 1);
-            parseMapData.jz1lnfj1vxdlz = Math.Round(kafkaData.jz1lnfj1vxdlz * 0.1, 1);
-            parseMapData.jz1lnfj1wxdlz = Math.Round(kafkaData.jz1lnfj1wxdlz * 0.1, 1);
-            parseMapData.jz1lnfj2uxdlz = Math.Round(kafkaData.jz1lnfj2uxdlz * 0.1, 1);
-            parseMapData.jz1lnfj2vxdlz = Math.Round(kafkaData.jz1lnfj2vxdlz * 0.1, 1);
-            parseMapData.jz1lnfj2wxdlz = Math.Round(kafkaData.jz1lnfj2wxdlz * 0.1, 1);
-            parseMapData.jz1ysj1uxdlz = Math.Round(kafkaData.jz1ysj1uxdlz * 0.1, 1);
-            parseMapData.jz1ysj1vxdlz = Math.Round(kafkaData.jz1ysj1vxdlz * 0.1, 1);
-            parseMapData.jz1ysj1wxdlz = Math.Round(kafkaData.jz1ysj1wxdlz * 0.1, 1);
-            parseMapData.jz1ysj2uxdlz = Math.Round(kafkaData.jz1ysj2uxdlz * 0.1, 1);
-            parseMapData.jz1ysj2vxdlz = Math.Round(kafkaData.jz1ysj2vxdlz * 0.1, 1);
-            parseMapData.jz1ysj2wxdlz = Math.Round(kafkaData.jz1ysj2wxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj1gyyl = (kafkaData.jz1ysj1gyyl * 20);
+        //    parseMapData.jz1ysj1dyyl = (kafkaData.jz1ysj1dyyl * 20);
+        //    parseMapData.jz1ysj2gyyl = (kafkaData.jz1ysj2gyyl * 20);
+        //    parseMapData.jz1ysj2dyyl = (kafkaData.jz1ysj2dyyl * 20);
+        //    parseMapData.jz1lwylz = (kafkaData.jz1lwylz * 2);
+        //    parseMapData.jz1tfj1uxdlz = Math.Round(kafkaData.jz1tfj1uxdlz * 0.1, 1);
+        //    parseMapData.jz1tfj1vxdlz = Math.Round(kafkaData.jz1tfj1vxdlz * 0.1, 1);
+        //    parseMapData.jz1tfj1wxdlz = Math.Round(kafkaData.jz1tfj1wxdlz * 0.1, 1);
+        //    parseMapData.jz1tfj2uxdlz = Math.Round(kafkaData.jz1tfj2uxdlz * 0.1, 1);
+        //    parseMapData.jz1tfj2vxdlz = Math.Round(kafkaData.jz1tfj2vxdlz * 0.1, 1);
+        //    parseMapData.jz1tfj2wxdlz = Math.Round(kafkaData.jz1tfj2wxdlz * 0.1, 1);
+        //    parseMapData.jz1lnfj1uxdlz = Math.Round(kafkaData.jz1lnfj1uxdlz * 0.1, 1);
+        //    parseMapData.jz1lnfj1vxdlz = Math.Round(kafkaData.jz1lnfj1vxdlz * 0.1, 1);
+        //    parseMapData.jz1lnfj1wxdlz = Math.Round(kafkaData.jz1lnfj1wxdlz * 0.1, 1);
+        //    parseMapData.jz1lnfj2uxdlz = Math.Round(kafkaData.jz1lnfj2uxdlz * 0.1, 1);
+        //    parseMapData.jz1lnfj2vxdlz = Math.Round(kafkaData.jz1lnfj2vxdlz * 0.1, 1);
+        //    parseMapData.jz1lnfj2wxdlz = Math.Round(kafkaData.jz1lnfj2wxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj1uxdlz = Math.Round(kafkaData.jz1ysj1uxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj1vxdlz = Math.Round(kafkaData.jz1ysj1vxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj1wxdlz = Math.Round(kafkaData.jz1ysj1wxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj2uxdlz = Math.Round(kafkaData.jz1ysj2uxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj2vxdlz = Math.Round(kafkaData.jz1ysj2vxdlz * 0.1, 1);
+        //    parseMapData.jz1ysj2wxdlz = Math.Round(kafkaData.jz1ysj2wxdlz * 0.1, 1);
 
-            parseMapData.jz1bpq1gl = Math.Round(kafkaData.jz1bpq1gl * 0.1, 1);
-            parseMapData.jz1bpq2gl = Math.Round(kafkaData.jz1bpq2gl * 0.1, 1);
-            parseMapData.jz1bpq1scdy = Math.Round(kafkaData.jz1bpq1scdy * 0.1, 1);
-            parseMapData.jz1bpq2scdy = Math.Round(kafkaData.jz1bpq2scdy * 0.1, 1);
+        //    parseMapData.jz1bpq1gl = Math.Round(kafkaData.jz1bpq1gl * 0.1, 1);
+        //    parseMapData.jz1bpq2gl = Math.Round(kafkaData.jz1bpq2gl * 0.1, 1);
+        //    parseMapData.jz1bpq1scdy = Math.Round(kafkaData.jz1bpq1scdy * 0.1, 1);
+        //    parseMapData.jz1bpq2scdy = Math.Round(kafkaData.jz1bpq2scdy * 0.1, 1);
 
-            parseMapData.jz1zhl1ldlz = Math.Round(kafkaData.jz1zhl1ldlz * 0.01, 2);
-            parseMapData.jz1zhl2ldlz = Math.Round(kafkaData.jz1zhl2ldlz * 0.01, 2);
+        //    parseMapData.jz1zhl1ldlz = Math.Round(kafkaData.jz1zhl1ldlz * 0.01, 2);
+        //    parseMapData.jz1zhl2ldlz = Math.Round(kafkaData.jz1zhl2ldlz * 0.01, 2);
 
-            parseMapData.ysjbpq1pfcwd = Math.Round(kafkaData.ysjbpq1pfcwd * 0.1, 1);
-            parseMapData.ysjbpq2pfcwd = Math.Round(kafkaData.ysjbpq2pfcwd * 0.1, 1);
-            parseMapData.ysjbpq1igbtwd = Math.Round(kafkaData.ysjbpq1igbtwd * 0.1, 1);
-            parseMapData.ysjbpq2igbtwd = Math.Round(kafkaData.ysjbpq2igbtwd * 0.1, 1);
-            parseMapData.create_time = kafkaData.rq;
+        //    parseMapData.ysjbpq1pfcwd = Math.Round(kafkaData.ysjbpq1pfcwd * 0.1, 1);
+        //    parseMapData.ysjbpq2pfcwd = Math.Round(kafkaData.ysjbpq2pfcwd * 0.1, 1);
+        //    parseMapData.ysjbpq1igbtwd = Math.Round(kafkaData.ysjbpq1igbtwd * 0.1, 1);
+        //    parseMapData.ysjbpq2igbtwd = Math.Round(kafkaData.ysjbpq2igbtwd * 0.1, 1);
+        //    parseMapData.create_time = kafkaData.rq;
 
-            return parseMapData;
-        }
+        //    return parseMapData;
+        //}
 
         //11号线获取列车号和车厢号
         private static (Dictionary<string, string>, Dictionary<string, string>) GetLch()

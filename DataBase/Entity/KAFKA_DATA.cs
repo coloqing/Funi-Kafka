@@ -9,24 +9,64 @@ namespace DataBase.Entity
     public class KAFKA_DATA
     {
         /// <summary>
-        /// ID
+        /// 特征码AA55（43605）
         /// </summary>
-        public long Id { get; set; }
+        public int TZM { get; set; }
 
         /// <summary>
-        /// 项目ID
+        /// 协议版本
         /// </summary>
-        public int XMID { get; set; }
+        public int XY {  get; set; }
 
         /// <summary>
-        /// 列车ID
+        /// 帧号
         /// </summary>
-        public int LCID {  get; set; }  
-        
+        public int ZH { get; set; }
+
         /// <summary>
         /// 源主机ID
         /// </summary>
-        public int YZJID {  get; set; }  
+        public int YZJID {  get; set; }
+
+        /// <summary>
+        /// 目标主机ID
+        /// </summary>
+        public int MBZJID { get; set; }
+
+        /// <summary>
+        /// 端口（5548）
+        /// </summary>
+        public int DK { get; set; }
+
+        /// <summary>
+        /// 系统代号
+        /// </summary>
+        public int XTDH { get; set; }
+
+        /// <summary>
+        /// 数据长度N字节
+        /// </summary>
+        public int DLN { get; set; }
+
+        /// <summary>
+        /// 预留
+        /// </summary>
+        public int YL { get; set; }
+
+        /// <summary>
+        /// 软件包版本
+        /// </summary>
+        public int SW_VER_DSP_STD { get; set; }
+
+        /// <summary>
+        /// 控制板FPGA软件版本
+        /// </summary>
+        public int SW_VER_FPGA { get; set; }
+
+        /// <summary>
+        /// 控制板CPU软件版本
+        /// </summary>
+        public int SW_VER_DSP_APP { get; set; }
 
         /// <summary>
         /// 输出总功率
@@ -234,7 +274,7 @@ namespace DataBase.Entity
         public int T_HS_Inv_2 { get; set; }
 
         /// <summary>
-        /// 逆变器温度2
+        /// 逆变器温度1
         /// </summary>
         public int T_HS_Inv_1 { get; set; }
 
