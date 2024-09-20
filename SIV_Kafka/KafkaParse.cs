@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using SqlSugar.Extensions;
 using SqlSugar;
 using DataBase.Entity;
+using System.Runtime.CompilerServices;
 
 
 namespace SIV_Kafka
@@ -21,7 +22,7 @@ namespace SIV_Kafka
     {
         private static IMapper _mapper;
         // 使用缓存的 PropertyInfo 数组（可选，用于性能优化）  
-        private static Dictionary<Type, PropertyInfo[]> cachedProperties = new Dictionary<Type, PropertyInfo[]>();
+        private static ConditionalWeakTable<Type, PropertyInfo[]> cachedProperties = new ConditionalWeakTable<Type, PropertyInfo[]>();
 
         static KafkaParse()
         {
@@ -43,29 +44,45 @@ namespace SIV_Kafka
         /// </summary>
         /// <param name="kafkaString">16进制字符串</param>
         /// <returns></returns>
-        public static List<TB_PARSING_DATAS> GetKafkaData(TB_YSBW ysbw)
+        public static List<KAFKA_DATA> GetKafkaData(TB_YSBW ysbw)
         { 
             try
             {
-                var kfkData = new List<KAFKA_DATA>();
-                var result = new List<TB_PARSING_DATAS>();
+                var result = new List<KAFKA_DATA>();
 
                 // 将16进制字符串转换为字节数组  
                 byte[] byteArray = StringToByteArray(ysbw.ysbw);
 
-                //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(timespang).DateTime;
+                var t = DateTime.Now;
+                DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(352649216).DateTime;
+                var t1 = DateTimeOffset.Now;
+                var dateTime1 = t1.ToUnixTimeSeconds();
 
                 //项目ID
-                int xlh = ByteToInt(byteArray, 2, 2);
+                int xlId = ByteToInt(byteArray, 2, 2);
                 //列车ID
-                int lchNum = ByteToInt(byteArray, 6, 2);
+                int lcId = ByteToInt(byteArray, 6, 2);
+                //WTDId
+                int wtdId = ByteToInt(byteArray, 8, 2);
+                //数据总长度
+                int dataLength = ByteToInt(byteArray, 10, 2);
+                         
+                int time1 = ByteToInt(byteArray, 12, 1);
+                int time2 = ByteToInt(byteArray, 13, 1);
+                int time3 = ByteToInt(byteArray, 14, 1);
+                int time4 = ByteToInt(byteArray, 15, 1);
+                int time5 = ByteToInt(byteArray, 16, 1);
+                int time6 = ByteToInt(byteArray, 17, 1);
 
+                //WTD时间
+                var time = time1+2000 + "-" + time2 + "-" + time3 + " " +time4+":"+time5+":"+time6;
+                
                 // 查找帧头AA55的索引（注意，这里的索引是基于字节数组的）  
                 List<int> AA55List = FindFrameHeader(byteArray, 0xAA, 0x55);
                 //添加0-100字节偏移量
-                List<int> indexLength = new() { 2,2,2,1,1,2,2,2};
+                List<int> indexLength = new() { 2,2,2,1,1,2,2,2,5};
                 //添加100-128字节偏移量
-                indexLength.AddRange(getIndex(115, 4));
+                indexLength.AddRange(getIndex(114, 4));
                 
                 foreach (var item in AA55List)
                 {
@@ -76,22 +93,31 @@ namespace SIV_Kafka
                         int byteValue = ByteToInt(byteArray, startIndex, length);
                         startIndex += length;
                         data.Add(byteValue);
-                    }                  
+                    }
+
+                    int dk = ByteToInt(byteArray, item+8, 2, false);
+                    
                     //把解析的值赋值给实体
                     var ParsingData = PopulateBFromList<KAFKA_DATA>(data);
-                    kfkData.Add(ParsingData);
+
+                    var svt = DateTimeOffset.FromUnixTimeSeconds(ParsingData.SV_Unixtime).DateTime;
+                    ParsingData.Id = SnowFlakeSingle.Instance.NextId();
+                    ParsingData.DK = dk;
+                    ParsingData.WTD_Time = Convert.ToDateTime(time);
+                    ParsingData.SV_Time = Convert.ToDateTime(svt);
+                    result.Add(ParsingData);
                 }
-                result = _mapper.Map<List<TB_PARSING_DATAS>>(kfkData);
 
                 return result;
             }
             catch (Exception e)
             {
                 throw new Exception(e.ToString());
-            }          
-            
+            }                    
         }
-     
+
+        
+
         /// <summary>
         /// 数据处理
         /// </summary>
@@ -316,10 +342,11 @@ namespace SIV_Kafka
                 properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Where(p => p.PropertyType == typeof(int) && p.CanWrite)
                     .ToArray();
-                cachedProperties[type] = properties;
+
+                cachedProperties.Add(type, properties);
             }
 
-            for (int i = 0;  i < values.Count && i < properties.Length; i++)
+            for (int i = 0; i < Math.Min(values.Count, properties.Length); i++)
             {
                 properties[i].SetValue(instance, values[i]);
             }
@@ -327,6 +354,39 @@ namespace SIV_Kafka
             return instance;
         }
 
+
+        /// <summary>
+        /// CRC校验
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public ushort ComputeCRC16CCITT(byte[] bytes)
+        {
+            // CRC-CCITT多项式，表示为无最高位1的二进制数（即X^16的系数被省略）  
+            // 对于X^16+X^12+X^5+1，省略X^16后，剩下的是1001100000010001（二进制），转换为十六进制为0x1021  
+            ushort Polynomial = 0x1021;
+            // 初始化CRC寄存器为0xFFFF  
+            ushort crc = 0xFFFF;
+
+            crc = 0xFFFF;
+            foreach (byte b in bytes)
+            {
+                crc ^= (ushort)(b << 8); // 将数据字节左移8位后与CRC寄存器异或  
+                for (int i = 0; i < 8; i++)
+                {
+                    if ((crc & 0x8000) != 0)
+                    {
+                        crc = (ushort)((crc << 1) ^ Polynomial);
+                    }
+                    else
+                    {
+                        crc <<= 1;
+                    }
+                    crc &= 0xFFFF; // 实际上这一步在大多数情况下是多余的，因为ushort类型已经限制了范围  
+                }
+            }
+            return crc;
+        }
 
         //获取字节参数
         static List<int> getIndex(int num, int value)

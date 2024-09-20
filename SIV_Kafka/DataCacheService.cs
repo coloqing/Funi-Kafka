@@ -19,6 +19,7 @@ namespace SIV_Kafka
         private readonly MyDbContext dbContext;
         static ConcurrentQueue<PartsLife> _PartsLife = new ConcurrentQueue<PartsLife>();
         static ConcurrentQueue<TB_PARSING_DATAS> _TB_PARSING_DATAS = new ConcurrentQueue<TB_PARSING_DATAS>();
+        static ConcurrentQueue<KAFKA_DATA> _KAFKA_DATA = new ConcurrentQueue<KAFKA_DATA>();
         static ConcurrentQueue<TB_PARSING_NEWDATAS> _TB_PARSING_NEWDATAS_Update = new ConcurrentQueue<TB_PARSING_NEWDATAS>();
         static ConcurrentQueue<TB_PARSING_NEWDATAS> _TB_PARSING_NEWDATAS = new ConcurrentQueue<TB_PARSING_NEWDATAS>();
         static ConcurrentQueue<TB_YSBW> _TB_YSBW = new ConcurrentQueue<TB_YSBW>();
@@ -60,6 +61,15 @@ namespace SIV_Kafka
                     }
                 }
 
+                var addKafkaList = new List<KAFKA_DATA>();
+                for (var i = 0; i < _KAFKA_DATA.Count; i++)
+                {
+                    if (_KAFKA_DATA.TryDequeue(out var data))
+                    {
+                        addKafkaList.Add(data);
+                    }
+                }
+             
                 var tpnList = new List<TB_PARSING_NEWDATAS>();
                 for (var i = 0; i < _TB_PARSING_NEWDATAS.Count; i++)
                 {
@@ -84,6 +94,7 @@ namespace SIV_Kafka
                 {
                     dbContext.Fastest<PartsLife>().PageSize(plList.Count).BulkCopy(plList);
                     dbContext.Fastest<TB_PARSING_DATAS>().PageSize(tpdList.Count).SplitTable().BulkCopy(tpdList);
+                    dbContext.Fastest<KAFKA_DATA>().PageSize(addKafkaList.Count).SplitTable().BulkCopy(addKafkaList);
                     dbContext.Fastest<TB_PARSING_NEWDATAS>().PageSize(tpnList.Count).BulkCopy(tpnList);
                     dbContext.Fastest<TB_PARSING_NEWDATAS>().BulkUpdate(tpnUpdateList);
                     dbContext.Fastest<TB_YSBW>().PageSize(ysbw.Count).SplitTable().BulkCopy(ysbw);
@@ -110,6 +121,14 @@ namespace SIV_Kafka
             }
         }
 
+        public static void AddKAFKA_DATA(List<KAFKA_DATA> list)
+        {
+            foreach (var item in list)
+            {
+                _KAFKA_DATA.Enqueue(item);
+            }
+        }
+
         public static void AddTB_PARSING_DATAS(List<TB_PARSING_DATAS> list)
         {
             foreach (var item in list)
@@ -117,7 +136,6 @@ namespace SIV_Kafka
                 _TB_PARSING_DATAS.Enqueue(item);
             }
         }
-
         public static void AddUpdateTB_PARSING_NEWDATAS(List<TB_PARSING_NEWDATAS> list)
         {
             foreach (var item in list)

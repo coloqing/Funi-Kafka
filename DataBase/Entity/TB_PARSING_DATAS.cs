@@ -7,7 +7,11 @@ using System.Threading.Tasks;
 
 namespace DataBase.Entity
 {
-    [SugarTable("TB_PARSING_DATAS")]
+    /// <summary>
+    /// 
+    /// </summary>
+    [SplitTable(SplitType.Day)]
+    [SugarTable("TB_PARSING_DATAS_{year}{month}{day}")]
     public class TB_PARSING_DATAS
     {
         /// <summary>
@@ -24,12 +28,12 @@ namespace DataBase.Entity
         /// <summary>
         /// 列车id
         /// </summary>
-        public int LCId {  get; set; }
-
+        public int LcId {  get; set; }
+       
         /// <summary>
         /// 源主机ID
         /// </summary>
-        public int YZJID { get; set; }
+        public int YzjId { get; set; }
 
         /// <summary>
         /// 输出总功率
@@ -261,8 +265,15 @@ namespace DataBase.Entity
         /// </summary>
         public int SV_Unixtime { get; set; }
 
+        /// <summary>
+        /// 通讯盒当前时间
+        /// </summary>
+        [SplitField]
         public DateTime SV_Time { get; set; }
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
         public DateTime CreateTime { get;}
 
     }

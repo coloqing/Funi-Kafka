@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SqlSugar;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace DataBase.Entity
 {
+    [SplitTable(SplitType.Day)]
+    [SugarTable("KAFKA_DATA_{year}{month}{day}")]
     public class KAFKA_DATA
     {
         /// <summary>
@@ -622,5 +625,12 @@ namespace DataBase.Entity
         /// 通讯盒当前时间戳
         /// </summary>
         public int SV_Unixtime { get; set; }
+
+        public long Id { get; set; }
+
+        [SplitField]
+        public DateTime SV_Time { get; set; }=DateTime.Now;
+        public DateTime CreateTime { get; set; }=DateTime.Now;
+        public DateTime WTD_Time { get; set; }
     }
 }

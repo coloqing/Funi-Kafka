@@ -100,7 +100,7 @@ namespace DataBase.Entity
         /// Nullable:True
         /// </summary>           
         [SugarColumn(ColumnDescription = "创建时间")]
-        public DateTime? createtime { get; set; }
+        public DateTime? CreateTime { get; set; }
 
         /// <summary>
         /// Desc:创建人
@@ -108,7 +108,7 @@ namespace DataBase.Entity
         /// Nullable:True
         /// </summary>           
         [SugarColumn(ColumnDescription = "创建人", Length = 50)]
-        public string? createuserid { get; set; }
+        public string? CreateUser { get; set; }
 
         /// <summary>
         /// Desc:修改时间
@@ -116,7 +116,7 @@ namespace DataBase.Entity
         /// Nullable:True
         /// </summary>           
         [SugarColumn(ColumnDescription = "修改时间")]
-        public DateTime? updatetime { get; set; }
+        public DateTime? UpdateTime { get; set; }
 
         /// <summary>
         /// Desc:修改人
@@ -124,7 +124,7 @@ namespace DataBase.Entity
         /// Nullable:True
         /// </summary>           
         [SugarColumn(ColumnDescription = "修改人", Length = 50)]
-        public string? updateuserid { get; set; }
+        public string? UpdateUser { get; set; }
 
     }
 }

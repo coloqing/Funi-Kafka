@@ -60,9 +60,9 @@ namespace SIV_Kafka
         public async Task Start()
         {
             //InitTables();
-            //await GetTestData();
+            await GetTestData();
             
-            await _ConsumerHelper.StartConsumingWithMultipleThreadsAsyncV1(consumeCallback, 8);
+            //await _ConsumerHelper.StartConsumingWithMultipleThreadsAsyncV1(consumeCallback, 8);
 
             _logger.LogInformation("kafkaStartConsuming...");
    
@@ -111,6 +111,7 @@ namespace SIV_Kafka
             Stopwatch stopwatch = new();
             try
             {
+                InitTables();
                 foreach (string file in files)
                 {
                     // 读取文件内容  
@@ -118,27 +119,30 @@ namespace SIV_Kafka
 
                     string fileContent = Encoding.UTF8.GetString(fileBytes);
 
-
                     stopwatch.Restart();
+
+                    fileContent = "55FF138B0100004B000204021809131116096E0000000000AA550004CE7D0206AC156EFDE00100000000405100001450000015050000C0030000FB0300001100000011000000000000000000000022000000250200002602000026020000C10400000187260030000000320000003A00000026020000BC0200004C040000230000007C0000004D04000020020000220000003E0600005D000000040000001000000000000000000000000000000000000000000000007503000000000000110000001100000002000000C104000001872600F30100002700000032000000030000009C000000D90100004B0000004B0000004B000000DC000000DB000000DB000000BC02000063010000590100002F000000110000001000000000000000000000000000000000000000000000000000000000000000000000006400000001000000000000000000000021000000FFFFFFFF76000000640000007C000000110000000100000010000000000000000000000000000000000000000000000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000001450000000000000000000000000000000800000008000000080000015050000BF5DEC66000000000000000000000000000000000000000000000000C7C8AA550004CB7D0506AC156EFDE00100000000405100001450000015050000DA0300000C040000110000001100000000000000000000001F000000260200002602000025020000C10400000107270032000000340000003B00000026020000BF0200004D0400002A0000007C0000004B040000E50100001F000000190600005D000000040000001000000000000000000000000000000000000000000000008203000000000000110000001100000003000000C104000001072700F30100002A0000003900000001000000A10000009C010000420000004300000043000000DB000000DC000000DC000000BF02000065010000590100002F000000110000001000000000000000000000000000000000000000000000000000000000000000000000006400000001000000000000000000000020000000FFFFFFFF76000000640000007C000000110000000100000010000000000000000000000000000000000000000000000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000001450000000000000000000000000000000800000008000000080000015050000C15DEC6600000000000000000000000000000000000000000000000086890CF0";
+                    var fileContent1 = "55FF138B01000051000204021809131116096E0000000000AA55000450540206AC156EFDE00100000000405100001450000015050000F4030000230400000B0000000C0000000000000000000000480000002C0200002A0200002A020000C10400000187260035000000370000003A0000002A020000C002000056040000310000007C000000550400007D040000480000002F0600005D00000004000000100000000000000000000000000000000000000000000000AB030000000000000B0000000C00000002000000C104000001872600F40100002C0000003F00000003000000860000000C0400009E0000009E0000009D000000DB000000DC000000DC000000C0020000650100005A0100002F000000110000001000000000000000000000000000000000000000000000000000000000000000000000006400000001000000000000000000000021000000FFFFFFFF76000000640000007C000000110000000100000010000000000000000000000000000000000000000000000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000001450000000000000000000000000000000800000008000000080000015050000BF5DEC66000000000000000000000000000000000000000000000000A58AAA55000452540506AC156EFDE001000000004051000014500000150500001D040000540400000B0000000B0000000000000000000000490000002B020000280200002C020000C10400000107270037000000380000003B00000029020000BE020000530400002B0000007C0000005504000085040000490000002E0600005D00000004000000100000000000000000000000000000000000000000000000DE030000000000000B0000000B00000002000000C104000001072700F3010000290000003E000000020000008400000016040000A00000009F0000009F000000DB000000DC000000DC000000BE020000640100005A0100002F000000110000001000000000000000000000000000000000000000000000000000000000000000000000006400000001000000000000000000000021000000FFFFFFFF76000000640000007C000000110000000100000010000000000000000000000000000000000000000000000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000000080000000800000008000001450000000000000000000000000000000800000008000000080000015050000C45DEC66000000000000000000000000000000000000000000000000610F7EDE";
 
                     // 这里是你要每秒执行的方法  
                     var ysbwModel = new TB_YSBW()
                     {
-                        ysbw = fileContent
+                        ysbw = fileContent1
                     };
                     var data = KafkaParse.GetKafkaData(ysbwModel);
                     if (data.Count>0)
                     {
                         //添加寿命数据
-                        await AddOrUpdateSMData(data);
+                        //await AddOrUpdateSMData(data);
 
-                        var lch = data.FirstOrDefault()?.LCId;
+                        //var lch = data.FirstOrDefault()?.LCId;
 
-                        DataCacheService.AddTB_PARSING_DATAS(data);
-                                            
-                        await UpdateDataNow(lch,data);
+                        //DataCacheService.AddKAFKA_DATA(data);
+                        var count = await _dbContext.Insertable(data).SplitTable().ExecuteCommandAsync();
+
+                        //await UpdateDataNow(lch,data);
                     }
-                    await Task.Delay(200);
+                    await Task.Delay(1000);
                     stopwatch.Stop();
                     Console.WriteLine( $"总耗时 == {stopwatch.ElapsedMilliseconds}");
                 }
@@ -180,13 +184,13 @@ namespace SIV_Kafka
                 var data = KafkaParse.GetKafkaData(ysbwModel);
 
                 //添加寿命数据
-                await AddOrUpdateSMData(data);
+                //await AddOrUpdateSMData(data);
 
-                DataCacheService.AddTB_PARSING_DATAS(data);
+                //DataCacheService.AddTB_PARSING_DATAS(data);
 
-                var lch = data.FirstOrDefault()?.LCId;
+                //var lch = data.FirstOrDefault()?.LCId;
 
-                await UpdateDataNow(lch,data);
+                //await UpdateDataNow(lch,data);
 
                 DataCacheService.AddTB_YSBW(ysbwModel);
                
@@ -212,7 +216,7 @@ namespace SIV_Kafka
                 _logger.LogInformation("开始更新表结构...");
 
                 // 加载程序集并获取相关类型  
-                var assembly = Assembly.LoadFrom("DataBase.dll").GetTypes().Where(x => x.Namespace == "DataBase.Tables").ToList();
+                var assembly = Assembly.LoadFrom("DataBase.dll").GetTypes().Where(x => x.Namespace == "DataBase.Entity").ToList();
 
                 foreach (Type item in assembly)
                 {
@@ -222,7 +226,12 @@ namespace SIV_Kafka
                         // 获取差异并处理  
                         var diffString = _dbContext.CodeFirst.GetDifferenceTables(item).ToDiffList();
                         ProcessTableDifferences(item, diffString);
-                    }                  
+                    }
+                    else
+                    {
+                        _dbContext.CodeFirst.InitTables(item); // 假设存在这样的方法  
+                        _logger.LogInformation($"表{item.Name}不存在，已创建。");
+                    }               
                 }
 
                 _logger.LogInformation("表结构更新完成");
@@ -267,15 +276,15 @@ namespace SIV_Kafka
                 try
                 {
                     var Kdata = dataList.FirstOrDefault();
-                    var isData = await _dbContext.Queryable<PartsLife>().Where(x => x.CH == Kdata.LCId.ToString()).ToListAsync();
-                    if (isData.Count > 0)
-                    {
-                        return;
-                    }
-                    var config = _dbContext.Queryable<SYS_Config>();
+                    //var isData = await _dbContext.Queryable<PartsLife>().Where(x => x.CH == Kdata.LCId.ToString()).ToListAsync();
+                    //if (isData.Count > 0)
+                    //{
+                    //    return;
+                    //}
+                    //var config = _dbContext.Queryable<SYS_Config>();
  
                     //获取线路名称
-                    var XL = config.Where(x => x.concode == "GZML7S").First()?.conval;
+                    //var XL = config.Where(x => x.concode == "GZML7S").First()?.conval;
    
                     //获取寿命部件
 
@@ -380,7 +389,7 @@ namespace SIV_Kafka
             if (lch != null)
             {
                 var realData = _mapper.Map<List<TB_PARSING_NEWDATAS>>(data);
-                var isRealData = _dbContext.Queryable<TB_PARSING_NEWDATAS>().Where(x => x.LCId == lch).ToList();
+                var isRealData = _dbContext.Queryable<TB_PARSING_NEWDATAS>().Where(x => x.LcId == lch).ToList();
                 if (isRealData.Count == 0)
                 {
                     //var realIds = await _dbContext.Insertable(realData).ExecuteReturnSnowflakeIdListAsync();
