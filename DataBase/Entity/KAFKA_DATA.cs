@@ -628,6 +628,21 @@ namespace DataBase.Entity
 
         public long Id { get; set; }
 
+        /// <summary>
+        /// 项目ID
+        /// </summary>
+        public int ProjId { get; set; }
+
+        /// <summary>
+        /// 列车ID
+        /// </summary>
+        public int TrainId { get; set; }
+
+        /// <summary>
+        /// WTDID
+        /// </summary>
+        public int WtdId { get; set; }
+
         [SplitField]
         public DateTime SV_Time { get; set; }=DateTime.Now;
         public DateTime CreateTime { get; set; }=DateTime.Now;

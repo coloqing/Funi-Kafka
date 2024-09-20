@@ -59,9 +59,9 @@ namespace SIV_Kafka
                 var dateTime1 = t1.ToUnixTimeSeconds();
 
                 //项目ID
-                int xlId = ByteToInt(byteArray, 2, 2);
+                int projId = ByteToInt(byteArray, 2, 2);
                 //列车ID
-                int lcId = ByteToInt(byteArray, 6, 2);
+                int trainId = ByteToInt(byteArray, 6, 2);
                 //WTDId
                 int wtdId = ByteToInt(byteArray, 8, 2);
                 //数据总长度
@@ -103,6 +103,9 @@ namespace SIV_Kafka
                     var svt = DateTimeOffset.FromUnixTimeSeconds(ParsingData.SV_Unixtime).DateTime;
                     ParsingData.Id = SnowFlakeSingle.Instance.NextId();
                     ParsingData.DK = dk;
+                    ParsingData.ProjId = projId;
+                    ParsingData.TrainId = trainId;
+                    ParsingData.WtdId = wtdId;
                     ParsingData.WTD_Time = Convert.ToDateTime(time);
                     ParsingData.SV_Time = Convert.ToDateTime(svt);
                     result.Add(ParsingData);
@@ -115,8 +118,6 @@ namespace SIV_Kafka
                 throw new Exception(e.ToString());
             }                    
         }
-
-        
 
         /// <summary>
         /// 数据处理
