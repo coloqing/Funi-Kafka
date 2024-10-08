@@ -54,7 +54,7 @@ namespace SIV_Kafka
                 byte[] byteArray = StringToByteArray(ysbw.ysbw);
 
                 var t = DateTime.Now;
-                DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(352649216).DateTime;
+                DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(184549376).DateTime;
                 var t1 = DateTimeOffset.Now;
                 var dateTime1 = t1.ToUnixTimeSeconds();
 
@@ -74,28 +74,49 @@ namespace SIV_Kafka
                 int time5 = ByteToInt(byteArray, 16, 1);
                 int time6 = ByteToInt(byteArray, 17, 1);
 
+                int test = ByteToInt(byteArray, 102, 4,false);
+                int test1 = ByteToInt(byteArray, 102, 4,true);
+                int test2 = ByteToInt(byteArray, 90, 4,false);
+                int test3 = ByteToInt(byteArray, 90, 4,true);
+                int test4 = ByteToInt(byteArray, 62, 4,false);
+                int test5 = ByteToInt(byteArray, 62, 4,true);
+                int test6 = ByteToInt(byteArray, 82, 4, false);
+                int test7 = ByteToInt(byteArray, 82, 4, true);
+
+
                 //WTD时间
                 var time = time1+2000 + "-" + time2 + "-" + time3 + " " +time4+":"+time5+":"+time6;
                 
                 // 查找帧头AA55的索引（注意，这里的索引是基于字节数组的）  
                 List<int> AA55List = FindFrameHeader(byteArray, 0xAA, 0x55);
                 //添加0-100字节偏移量
-                List<int> indexLength = new() { 2,2,2,1,1,2,2,2,5};
+                List<int> indexLength1 = new() { 2,2,2,1,1,2,2,2};
+                List<int> indexLength = new();
                 //添加100-128字节偏移量
-                indexLength.AddRange(getIndex(114, 4));
+                indexLength.AddRange(getIndex(115, 4));
                 
                 foreach (var item in AA55List)
                 {
                     List<int> data = new();
-                    int startIndex = item;
+                    int startIndex = item + 19;
+                    int startIndex1 = item;
+
+                    foreach (var length in indexLength1)
+                    {
+                        int byteValue = ByteToInt(byteArray, startIndex1, length);
+                        startIndex1 += length;
+                        data.Add(byteValue);
+                    }
+
                     foreach (var length in indexLength)
                     {
-                        int byteValue = ByteToInt(byteArray, startIndex, length);
-                        startIndex += length;
+                        int byteValue = ByteToInt(byteArray, startIndex1, length, false);
+                        startIndex1 += length;
                         data.Add(byteValue);
                     }
 
                     int dk = ByteToInt(byteArray, item+8, 2, false);
+                    
                     
                     //把解析的值赋值给实体
                     var ParsingData = PopulateBFromList<KAFKA_DATA>(data);
@@ -452,26 +473,50 @@ namespace SIV_Kafka
             return subset;
         }
 
-        //byte字节转int
+        ////byte字节转int
+        //public static int ByteToInt(byte[] byteArray, int startIndex, int length, bool isBigEndian = true)
+        //{
+        //    int intValue = 0;
+        //    if (startIndex < 0 || startIndex >= byteArray.Length || length < 0 || startIndex + length > byteArray.Length)
+        //        throw new ArgumentOutOfRangeException();
+
+        //    byte[] subset = new byte[length];
+        //    Array.Copy(byteArray, startIndex, subset, 0, length);
+        //    for (int i = 0; i < subset.Length; i++)
+        //    {
+        //        if (isBigEndian)
+        //        {
+        //            intValue |= subset[i] << ((subset.Length - 1 - i) * 8);
+        //        }
+        //        else
+        //        {
+        //            intValue |= subset[i] << (i * 8);
+        //        }
+        //    }
+        //    return intValue;
+        //}
+
+        /// <summary>  
+        /// 将字节数组转换为int，支持大端和小端模式  
+        /// </summary>  
+        /// <param name="byteArray">包含字节的数组</param>  
+        /// <param name="startIndex">起始索引</param>  
+        /// <param name="length">要转换的字节长度（必须是1, 2, 3, 或 4）</param>  
+        /// <param name="isBigEndian">是否为大端模式</param>  
+        /// <returns>转换后的int值</returns>  
+        /// <exception cref="ArgumentOutOfRangeException">如果索引无效或长度不正确</exception>  
         public static int ByteToInt(byte[] byteArray, int startIndex, int length, bool isBigEndian = true)
         {
-            int intValue = 0;
             if (startIndex < 0 || startIndex >= byteArray.Length || length < 0 || startIndex + length > byteArray.Length)
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(startIndex) + " 或 " + nameof(length) + " 无效");
 
-            byte[] subset = new byte[length];
-            Array.Copy(byteArray, startIndex, subset, 0, length);
-            for (int i = 0; i < subset.Length; i++)
+            int intValue = 0;
+            for (int i = 0; i < length; i++)
             {
-                if (isBigEndian)
-                {
-                    intValue |= subset[i] << ((subset.Length - 1 - i) * 8);
-                }
-                else
-                {
-                    intValue |= subset[i] << (i * 8);
-                }
+                int shift = (isBigEndian ? length - 1 - i : i) * 8;
+                intValue |= (byteArray[startIndex + i] & 0xFF) << shift;
             }
+
             return intValue;
         }
 
