@@ -74,15 +74,14 @@ namespace SIV_Kafka
                 int time5 = ByteToInt(byteArray, 16, 1);
                 int time6 = ByteToInt(byteArray, 17, 1);
 
-                int test = ByteToInt(byteArray, 102, 4,false);
-                int test1 = ByteToInt(byteArray, 102, 4,true);
-                int test2 = ByteToInt(byteArray, 90, 4,false);
-                int test3 = ByteToInt(byteArray, 90, 4,true);
-                int test4 = ByteToInt(byteArray, 62, 4,false);
-                int test5 = ByteToInt(byteArray, 62, 4,true);
+                int test = ByteToInt(byteArray, 102, 4, false);
+                int test1 = ByteToInt(byteArray, 102, 4, true);
+                int test2 = ByteToInt(byteArray, 90, 4, false);
+                int test3 = ByteToInt(byteArray, 90, 4, true);
+                int test4 = ByteToInt(byteArray, 62, 4, false);
+                int test5 = ByteToInt(byteArray, 62, 4, true);
                 int test6 = ByteToInt(byteArray, 82, 4, false);
                 int test7 = ByteToInt(byteArray, 82, 4, true);
-
 
                 //WTD时间
                 var time = time1+2000 + "-" + time2 + "-" + time3 + " " +time4+":"+time5+":"+time6;
@@ -123,6 +122,7 @@ namespace SIV_Kafka
 
                     var svt = DateTimeOffset.FromUnixTimeSeconds(ParsingData.SV_Unixtime).DateTime;
                     ParsingData.Id = SnowFlakeSingle.Instance.NextId();
+                    ParsingData.YSBWID = ysbw.id;
                     ParsingData.DK = dk;
                     ParsingData.ProjId = projId;
                     ParsingData.TrainId = trainId;

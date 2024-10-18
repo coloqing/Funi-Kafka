@@ -127,6 +127,7 @@ namespace SIV_Kafka
                     // 这里是你要每秒执行的方法  
                     var ysbwModel = new TB_YSBW()
                     {
+                        id = SnowFlakeSingle.Instance.NextId(),
                         ysbw = fileContent1
                     };
                     var data = KafkaParse.GetKafkaData(ysbwModel);
@@ -137,8 +138,8 @@ namespace SIV_Kafka
 
                         //var lch = data.FirstOrDefault()?.LCId;
 
-                        //DataCacheService.AddKAFKA_DATA(data);
-                        var count = await _dbContext.Insertable(data).SplitTable().ExecuteCommandAsync();
+                        DataCacheService.AddKAFKA_DATA(data);
+                        //var count = await _dbContext.Insertable(data).SplitTable().ExecuteCommandAsync();
 
                         //await UpdateDataNow(lch,data);
                     }
@@ -172,7 +173,7 @@ namespace SIV_Kafka
 
                 var ysbwModel = new TB_YSBW
                 {
-                    ysbw = Convert.ToString(result.Message.Value),
+                    ysbw = result.Message.Value,
                     create_time = DateTime.Now,
                     partition = partition,
                     offset = offset,
@@ -190,7 +191,7 @@ namespace SIV_Kafka
 
                 //var lch = data.FirstOrDefault()?.LCId;
 
-                //await UpdateDataNow(lch,data);
+                await UpdateDataNow(data);
 
                 DataCacheService.AddTB_YSBW(ysbwModel);
                
@@ -384,41 +385,32 @@ namespace SIV_Kafka
         }
 
         //更新实时数据
-        private async Task UpdateDataNow(int? lch, List<TB_PARSING_DATAS> data)
+        private async Task UpdateDataNow(List<KAFKA_DATA> data)
         {
-            if (lch != null)
+            var lch = data.FirstOrDefault().TrainId;
+            
+            var realData = _mapper.Map<List<TB_PARSING_NOWDATAS>>(data);
+            var isRealData = _dbContext.Queryable<TB_PARSING_NOWDATAS>().Where(x => x.TrainId == lch);
+            if (isRealData.Any())
             {
-                var realData = _mapper.Map<List<TB_PARSING_NEWDATAS>>(data);
-                var isRealData = _dbContext.Queryable<TB_PARSING_NEWDATAS>().Where(x => x.LcId == lch).ToList();
-                if (isRealData.Count == 0)
+                foreach (var item in realData)
                 {
-                    //var realIds = await _dbContext.Insertable(realData).ExecuteReturnSnowflakeIdListAsync();
-                    DataCacheService.AddTB_PARSING_NEWDATAS(realData);
-                    await Console.Out.WriteLineAsync("实时数据新增成功");
+                    var newData = isRealData.First(x => x.YZJID == item.YZJID && x.TrainId == item.TrainId);
+                    item.Id = newData.Id;                 
+                    item.UpdateTime = DateTime.Now;
                 }
-                else
-                {
-                    //foreach (var item in realData)
-                    //{
-                    //    var newData = isRealData.First(x => x.device_code == item.device_code);
-                    //    item.id = newData.id;
-                    //    if (item.tfms == 7 && newData.tfms != 7)
-                    //    {
-                    //        item.State = 1;
-                    //    }
-                    //    if (item.tfms != 7 && newData.tfms == 7)
-                    //    {
-                    //        item.OnTime = item.rq;
-                    //    }
-                    //    item.update_time = item.rq;
-                    //}
 
-                    //await _dbContext.Updateable(realData).ExecuteCommandAsync();
-                    //await Console.Out.WriteLineAsync($"实时数据更新成功");
+                await _dbContext.Updateable(realData).ExecuteCommandAsync();
+                await Console.Out.WriteLineAsync($"实时数据更新成功");
 
-                    DataCacheService.AddUpdateTB_PARSING_NEWDATAS(realData);
-                }
+                //DataCacheService.AddUpdateTB_PARSING_NEWDATAS(realData);
             }
-        } 
+            else
+            {
+                DataCacheService.AddTB_PARSING_NEWDATAS(realData);
+                await Console.Out.WriteLineAsync("实时数据新增成功");           
+            }
+
+        }
     }
 }
