@@ -140,10 +140,10 @@ namespace SIV_Kafka
 
                         DataCacheService.AddKAFKA_DATA(data);
                         //var count = await _dbContext.Insertable(data).SplitTable().ExecuteCommandAsync();
-
-                        //await UpdateDataNow(lch,data);
+                        await UpdateDataNow(data);
+                        DataCacheService.AddTB_YSBW(ysbwModel);
                     }
-                    await Task.Delay(1000);
+                    await Task.Delay(200);
                     stopwatch.Stop();
                     Console.WriteLine( $"总耗时 == {stopwatch.ElapsedMilliseconds}");
                 }
@@ -387,7 +387,7 @@ namespace SIV_Kafka
         //更新实时数据
         private async Task UpdateDataNow(List<KAFKA_DATA> data)
         {
-            var lch = data.FirstOrDefault().TrainId;
+            var lch = data.First().TrainId;
             
             var realData = _mapper.Map<List<TB_PARSING_NOWDATAS>>(data);
             var isRealData = _dbContext.Queryable<TB_PARSING_NOWDATAS>().Where(x => x.TrainId == lch);
@@ -400,15 +400,21 @@ namespace SIV_Kafka
                     item.UpdateTime = DateTime.Now;
                 }
 
-                await _dbContext.Updateable(realData).ExecuteCommandAsync();
-                await Console.Out.WriteLineAsync($"实时数据更新成功");
+                var updata = await _dbContext.Updateable(realData).ExecuteCommandAsync();
 
-                //DataCacheService.AddUpdateTB_PARSING_NEWDATAS(realData);
+                if (updata>0)
+                {
+                    await Console.Out.WriteLineAsync($"实时数据更新成功");
+                }
             }
             else
             {
-                DataCacheService.AddTB_PARSING_NEWDATAS(realData);
-                await Console.Out.WriteLineAsync("实时数据新增成功");           
+                var add = await _dbContext.Insertable(realData).ExecuteCommandAsync();
+                if (add >0)
+                {
+                    await Console.Out.WriteLineAsync("实时数据新增成功");
+                }
+                
             }
 
         }

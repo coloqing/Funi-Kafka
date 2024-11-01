@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataBase.Entity
+namespace DataBase
 {
     [SplitTable(SplitType.Day)]
     [SugarTable("KAFKA_DATA_{year}{month}{day}")]
@@ -19,7 +19,7 @@ namespace DataBase.Entity
         /// <summary>
         /// 协议版本
         /// </summary>
-        public int XY {  get; set; }
+        public int XY { get; set; }
 
         /// <summary>
         /// 帧号
@@ -29,7 +29,7 @@ namespace DataBase.Entity
         /// <summary>
         /// 源主机ID
         /// </summary>
-        public int YZJID {  get; set; }
+        public int YZJID { get; set; }
 
         /// <summary>
         /// 目标主机ID
@@ -74,57 +74,57 @@ namespace DataBase.Entity
         /// <summary>
         /// 输出总功率
         /// </summary>
-        public int InConv_Output_Energy {  get; set; }
-        
+        public int InConv_Output_Energy { get; set; }
+
         /// <summary>
         /// 输入总功率
         /// </summary>
-        public int InConv_Input_Energy {  get; set; }
+        public int InConv_Input_Energy { get; set; }
 
         /// <summary>
         /// 输入变换器正常运行时间
         /// </summary>
-        public int InConv_Operation_Time {  get; set; }
+        public int InConv_Operation_Time { get; set; }
 
         /// <summary>
         /// 输入变换器在线时间
         /// </summary>
-        public int InConv_On_Time {  get; set; }
-        
+        public int InConv_On_Time { get; set; }
+
         /// <summary>
         /// 输入电流3
         /// </summary>
-        public int I_DC_In_3 {  get; set; }
-        
+        public int I_DC_In_3 { get; set; }
+
         /// <summary>
         /// 输入电流2
         /// </summary>
-        public int I_DC_In_2 {  get; set; }  
+        public int I_DC_In_2 { get; set; }
 
         /// <summary>
         /// 输入电流1
         /// </summary>
-        public int I_DC_In_1 {  get; set; }
+        public int I_DC_In_1 { get; set; }
 
         /// <summary>
         /// 输入变换器2下母线电压
         /// </summary>
-        public int U_DC_Link_InConv_2_LO {  get; set; }
+        public int U_DC_Link_InConv_2_LO { get; set; }
 
         /// <summary>
         /// 输入变换器2上母线电压
         /// </summary>
-        public int U_DC_Link_InConv_2_UP {  get; set; }
+        public int U_DC_Link_InConv_2_UP { get; set; }
 
         /// <summary>
         /// 输入变换器1下母线电压
         /// </summary>
-        public int U_DC_Link_InConv_1_LO {  get; set; }
+        public int U_DC_Link_InConv_1_LO { get; set; }
 
         /// <summary>
         /// 数字输出信号
         /// </summary>
-        public int InConv_DIGOUT {  get; set; }
+        public int InConv_DIGOUT { get; set; }
 
         /// <summary>
         /// 数字输入信号
@@ -539,7 +539,7 @@ namespace DataBase.Entity
         /// <summary>
         /// 充电机初始化状态总时间
         /// </summary>
-        public int CNT_BC_INITTIME{ get; set; }
+        public int CNT_BC_INITTIME { get; set; }
 
         /// <summary>
         /// 充电机车间供电模式运行总时间
@@ -643,11 +643,12 @@ namespace DataBase.Entity
         /// </summary>
         public int WtdId { get; set; }
 
-        public long YSBWID { get; set; }
+        public long? YSBWID { get; set; }
+        public string? DeviceCode { get; set; }
 
-        [SplitField]
-        public DateTime SV_Time { get; set; }=DateTime.Now;
-        public DateTime CreateTime { get; set; }=DateTime.Now;
+        //[SplitField]
+        public DateTime SV_Time { get; set; } = DateTime.Now;
+        public DateTime CreateTime { get; set; } = DateTime.Now;
         public DateTime WTD_Time { get; set; }
     }
 }

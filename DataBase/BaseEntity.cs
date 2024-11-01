@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace DataBase.Entity
+namespace DataBase
 {
     public abstract class BaseEntity
     {

@@ -100,7 +100,7 @@ namespace SIV_Kafka
                             await Task.Delay(timeToWait, cancellationToken);
 
                             // 执行你的任务  
-                            await Delete();
+                            //await Delete();
                         }
                         catch (TaskCanceledException)
                         {
@@ -783,119 +783,49 @@ namespace SIV_Kafka
 
         //#region 预警模型
         /// <summary>
-        /// 温度异常预警模型
+        /// 8.1网压传感器故障预警模型
         /// </summary>
         /// <returns></returns>
         private async Task GetWycgqFault()
         {
             //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
             var addFaults = new List<FaultOrWarn>();
-
-            //var config = _db.Queryable<SYS_Config>().ToList();
-            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList();
-            //var equipments = await _db.Queryable<EquipmentFault>().ToListAsync();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
             var faultData = _db.Queryable<FaultOrWarn>().ToList();
             //获取线路名称
             //var XL = config.Where(x => x.concode == _lineCode).First().conval;
-            var newdata = await GetNewData(1);       
+            var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
             {
-                if (item.InConv_Event == 53) continue;
-                if (!(item.BC_OpMode == 0 && item.Inv_OpMode == 0 && item.Inconv_OpMode == 0)) continue;
-                
-                
+                if (item.First().U_DC_In < 1000 || item.First().U_DC_In > 1800) continue;
 
-                
+                if (item.First().InConv_Event == 53) continue;
+                if (!(item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0)) continue;
 
-                var data = newdata.Where(x => x.TrainId == item.TrainId && x.YZJID == item.YZJID).FirstOrDefault();
 
-                var gldata = newdata.FirstOrDefault(x => x.YSBWID == data.YSBWID && x.YZJID != data.YZJID);
-
-                var yz = (data.U_DC_In - gldata.U_DC_In) / gldata.U_DC_In;
+                var yz = (item.First().U_DC_In - item.Last().U_DC_In) / item.Last().U_DC_In;
                 var isTrue = (yz * 100 <= 5) && yz * 100 >= -5;
 
                 if (!isTrue)
                 {
 
                 }
-
-
-                var data10 = newData.Any(x => x.create_time >= time10 && x.tfms == 7);
-
-                var data = newData.Where(x => x.device_code == item.device_code && x.create_time >= time1 && x.create_time < item.update_time);
-
-                var xf1 = data.Any(x => x.jz1swwd > 60 || x.jz1swwd < 0);
-                var xf1off = data.Any(x => x.jz1swwd > 70 || x.jz1swwd < -20);
-
-
-                var sf1 = data.Any(x => x.jz1sfcgq1wd < -10 || x.jz1sfcgq1wd > 50);
-                var sf2 = data.Any(x => x.jz1sfcgq2wd < -10 || x.jz1sfcgq2wd > 50);
-                var hf1 = data.Any(x => x.jz1kswd < 0 || x.jz1kswdcgq1wd > 50 || x.jz1kswdcgq1wd < 0 || x.jz1kswdcgq1wd > 50);
-
-                var xf1F = faultData.Any(x => x.Code == xfWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-                var sf1F = faultData.Any(x => x.Code == sfWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-                var sf2F = faultData.Any(x => x.Code == sfWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-                var hf1F = faultData.Any(x => x.Code == hfWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-
-
-                var addfault = new FaultOrWarn
-                {
-                    xlh = XL,
-                    lch = item.lch,
-                    cxh = item.cxh,
-                    DeviceCode = item.device_code,
-                    Type = "2",
-                    State = "1",
-                    createtime = item.update_time
-                };
-
-                if (!data10 && xf1 && !xf1F)
-                {
-                    addfault.Code = xfWarn1.FaultCode;
-                    addfault.Name = xfWarn1.FaultName;
-                    addfault.FaultType = xfWarn1.Type;
-                    addFaults.Add(addfault);
-                }
-
-                if (!data10 && sf1 && !sf2F)
-                {
-                    addfault.Code = sfWarn1.FaultCode;
-                    addfault.Name = sfWarn1.FaultName;
-                    addfault.FaultType = sfWarn1.Type;
-                    addFaults.Add(addfault);
-                }
-
-                if (!data10 && sf2 && !sf2F)
-                {
-                    addfault.Code = sfWarn2.FaultCode;
-                    addfault.Name = sfWarn2.FaultName;
-                    addfault.FaultType = sfWarn2.Type;
-                    addFaults.Add(addfault);
-                }
-
-                if (!data10 && hf1 && !hf1F)
-                {
-                    addfault.Code = hfWarn1.FaultCode;
-                    addfault.Name = hfWarn1.FaultName;
-                    addfault.FaultType = hfWarn1.Type;
-                    addFaults.Add(addfault);
-                }
             }
 
             if (addFaults.Count > 0)
             {
-                var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
+                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
 
-                if (faultReq != null && faultReq.result_code == "200")
-                {
-                    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
+                //if (faultReq != null && faultReq.result_code == "200")
+                //{
+                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
 
-                    for (int i = 0; i < addFaults.Count; i++)
-                    {
-                        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                    }
-                }
+                //    for (int i = 0; i < addFaults.Count; i++)
+                //    {
+                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
+                //    }
+                //}
                 var addnum = _db.Insertable(addFaults).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -903,182 +833,53 @@ namespace SIV_Kafka
 
 
 
-        ///// <summary>
-        ///// 压缩机异常预警模型
-        ///// </summary>
-        ///// <returns></returns>
-        //private async Task GetYsjFault()
-        //{
-        //    EquipmentFault pqWarn1, pqWarn2, xqWarn1, xqWarn2, gyWarn1, gyWarn2, dyWarn1, dyWarn2;
-        //    var addFaults = new List<FaultOrWarn>();
+        /// <summary>
+        /// 8.2 中间电压传感器故障预警
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetZjdycgqFault()
+        {
+            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
+            var addFaults = new List<FaultOrWarn>();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
+            var faultData = _db.Queryable<FaultOrWarn>().ToList();
+            //获取线路名称
+            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
+            var newdata = await GetNewData(1);
 
-        //    var config = _db.Queryable<SYS_Config>().ToList();
-        //    var nowData = _db.Queryable<TB_PARSING_NEWDATAS>().ToList();
-        //    var equipments = await _db.Queryable<EquipmentFault>().ToListAsync();
-        //    var faultData = _db.Queryable<FaultOrWarn>().ToList();
-        //    //获取线路名称
-        //    var XL = config.Where(x => x.concode == _lineCode).First().conval;
+            foreach (var item in nowData)
+            {
+                if (item.First().U_DC_In < 1000 || item.First().U_DC_In > 1800) continue;
 
-        //    var newData = await GetNewData("15");
-        //    if (newData.Count == 0) return;
+                if (item.First().InConv_Event == 53) continue;
+                if (!(item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0)) continue;
 
-        //    foreach (var item in nowData)
-        //    {
-        //        if (item.yxtzjid == 1)
-        //        {
-        //            pqWarn1 = equipments.First(x => x.FaultCode == "hvac1014150001");
-        //            pqWarn2 = equipments.First(x => x.FaultCode == "hvac1014150002");
+                var yz = (item.First().U_DC_Link_Inv - item.Last().U_DC_Link_Inv) / item.Last().U_DC_Link_Inv;
+                var isTrue = (yz * 100 <= 5) && yz * 100 >= -5;
 
-        //            xqWarn1 = equipments.First(x => x.FaultCode == "hvac1014160001");
-        //            xqWarn2 = equipments.First(x => x.FaultCode == "hvac1014160002");
+                if (!isTrue)
+                {
 
-        //            gyWarn1 = equipments.First(x => x.FaultCode == "hvac1014020005");
-        //            gyWarn2 = equipments.First(x => x.FaultCode == "hvac1014020007");
+                }
+            }
 
-        //            dyWarn1 = equipments.First(x => x.FaultCode == "hvac1014020001");
-        //            dyWarn2 = equipments.First(x => x.FaultCode == "hvac1014020003");
-        //        }
-        //        else
-        //        {
-        //            pqWarn1 = equipments.First(x => x.FaultCode == "hvac1014150003");
-        //            pqWarn2 = equipments.First(x => x.FaultCode == "hvac1014150004");
+            if (addFaults.Count > 0)
+            {
+                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
 
-        //            xqWarn1 = equipments.First(x => x.FaultCode == "hvac1014160003");
-        //            xqWarn2 = equipments.First(x => x.FaultCode == "hvac1014160004");
+                //if (faultReq != null && faultReq.result_code == "200")
+                //{
+                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
 
-        //            gyWarn1 = equipments.First(x => x.FaultCode == "hvac1014020006");
-        //            gyWarn2 = equipments.First(x => x.FaultCode == "hvac1014020008");
-
-        //            dyWarn1 = equipments.First(x => x.FaultCode == "hvac1014020002");
-        //            dyWarn2 = equipments.First(x => x.FaultCode == "hvac1014020004");
-        //        }
-
-        //        var time10 = item.create_time.AddMinutes(-11);
-        //        var time1 = item.create_time.AddMinutes(-1);
-
-        //        var ysj1data10 = newData.Any(x => x.create_time >= time10 && x.jz1ysj1zt == 0);
-        //        var ysj2data10 = newData.Any(x => x.create_time >= time10 && x.jz1ysjj2zt == 0);
-
-        //        var data = newData.Where(x => x.device_code == item.device_code && x.create_time >= time1 && x.create_time < item.update_time);
-
-        //        var pq1 = data.Any(x => x.jz1ysj1pqwd > 125 || x.jz1ysj1pqwd < 30);
-        //        var pq2 = data.Any(x => x.jz1ysj2pqwd > 125 || x.jz1ysj2pqwd < 30);
-
-        //        var xq1 = data.Any(x => x.jz1ysj1xqwd < -10 || x.jz1ysj1xqwd > 40);
-        //        var xq2 = data.Any(x => x.jz1ysj2xqwd < -10 || x.jz1ysj2xqwd > 40);
-
-        //        var gy1 = data.Any(x => x.jz1ysj1gyyl < 1000 || x.jz1ysj1gyyl > 3000);
-        //        var gy2 = data.Any(x => x.jz1ysj2gyyl < 1000 || x.jz1ysj2gyyl > 3000);
-
-        //        var dy1 = data.Any(x => x.jz1ysj1dyyl < 300 || x.jz1ysj1dyyl > 800);
-        //        var dy2 = data.Any(x => x.jz1ysj2dyyl < 300 || x.jz1ysj2dyyl > 800);
-
-        //        var pq1F = faultData.Any(x => x.Code == pqWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-        //        var pq2F = faultData.Any(x => x.Code == pqWarn2.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-
-        //        var xq1F = faultData.Any(x => x.Code == xqWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-        //        var xq2F = faultData.Any(x => x.Code == xqWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-
-        //        var gy1F = faultData.Any(x => x.Code == gyWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-        //        var gy2F = faultData.Any(x => x.Code == gyWarn2.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-
-        //        var dy1F = faultData.Any(x => x.Code == dyWarn1.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-        //        var dy2F = faultData.Any(x => x.Code == dyWarn2.FaultCode && x.State == "1" && x.DeviceCode == item.device_code);
-
-
-        //        var addfault = new FaultOrWarn
-        //        {
-        //            xlh = XL,
-        //            lch = item.lch,
-        //            cxh = item.cxh,
-        //            DeviceCode = item.device_code,
-        //            Type = "2",
-        //            State = "1",
-        //            createtime = item.update_time
-        //        };
-
-        //        if (!ysj1data10 && pq1 && !pq1F)
-        //        {
-        //            addfault.Code = pqWarn1.FaultCode;
-        //            addfault.Name = pqWarn1.FaultName;
-        //            addfault.FaultType = pqWarn1.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj2data10 && pq2 && !pq2F)
-        //        {
-        //            addfault.Code = pqWarn2.FaultCode;
-        //            addfault.Name = pqWarn2.FaultName;
-        //            addfault.FaultType = pqWarn2.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj1data10 && xq1 && !xq1F)
-        //        {
-        //            addfault.Code = xqWarn1.FaultCode;
-        //            addfault.Name = xqWarn1.FaultName;
-        //            addfault.FaultType = xqWarn1.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj2data10 && xq2 && !xq2F)
-        //        {
-        //            addfault.Code = xqWarn2.FaultCode;
-        //            addfault.Name = xqWarn2.FaultName;
-        //            addfault.FaultType = xqWarn2.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj1data10 && gy1 && !gy1F)
-        //        {
-        //            addfault.Code = gyWarn1.FaultCode;
-        //            addfault.Name = gyWarn1.FaultName;
-        //            addfault.FaultType = gyWarn1.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj2data10 && gy2 && !gy2F)
-        //        {
-        //            addfault.Code = gyWarn2.FaultCode;
-        //            addfault.Name = gyWarn2.FaultName;
-        //            addfault.FaultType = gyWarn2.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj1data10 && dy1 && !dy1F)
-        //        {
-        //            addfault.Code = dyWarn1.FaultCode;
-        //            addfault.Name = dyWarn1.FaultName;
-        //            addfault.FaultType = dyWarn1.Type;
-        //            addFaults.Add(addfault);
-        //        }
-
-        //        if (!ysj2data10 && dy2 && !dy2F)
-        //        {
-        //            addfault.Code = dyWarn2.FaultCode;
-        //            addfault.Name = dyWarn2.FaultName;
-        //            addfault.FaultType = dyWarn2.Type;
-        //            addFaults.Add(addfault);
-        //        }
-        //    }
-
-        //    if (addFaults.Count > 0)
-        //    {
-        //        var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
-
-        //        if (faultReq != null && faultReq.result_code == "200")
-        //        {
-        //            _logger.LogInformation($"压缩机异常预警推送成功，新增了{addFaults.Count}条预警");
-
-        //            for (int i = 0; i < addFaults.Count; i++)
-        //            {
-        //                addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-        //            }
-        //        }
-        //        var addnum = _db.Insertable(addFaults).ExecuteCommand();
-        //        _logger.LogInformation($"压缩机异常预警同步完成，新增了{addnum}条预警");
-        //    }
-        //}
+                //    for (int i = 0; i < addFaults.Count; i++)
+                //    {
+                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
+                //    }
+                //}
+                var addnum = _db.Insertable(addFaults).ExecuteCommand();
+                _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
+            }
+        }
 
         ///// <summary>
         ///// 设备运行电流异常预警模型
@@ -2010,9 +1811,9 @@ namespace SIV_Kafka
             //var config = _db.Queryable<SYS_Config>().ToList();
             //获取故障时间
             int sj = 0;
-                //config.Where(x => x.concode == "WarnSj").First()?.conval;
+            //config.Where(x => x.concode == "WarnSj").First()?.conval;
 
-            string sql = @"SELECT * FROM dbo.TB_PARSING_DATAS" + 
+            string sql = @"SELECT * FROM dbo.TB_PARSING_DATAS" +
                 $"_{DateTime.Now:yyyyMMdd} " +
                          @"WHERE CreateTime >= DATEADD(MINUTE,-{0},GETDATE())";
 
@@ -2023,23 +1824,23 @@ namespace SIV_Kafka
             return faults;
         }
 
-        /// <summary>
-        /// 预警初始化
-        /// </summary>
-        /// <param name="dev"></param>
-        /// <param name="fault"></param>
-        /// <returns></returns>
-        private FaultOrWarn GetFAULTWARN(TB_PARSING_DATAS_NEWCS dev, OVERHAULIDEA fault)
-        {
-          
+        ///// <summary>
+        ///// 预警初始化
+        ///// </summary>
+        ///// <param name="dev"></param>
+        ///// <param name="fault"></param>
+        ///// <returns></returns>
+        //private FaultOrWarn GetFAULTWARN(TB_PARSING_DATAS_NEWCS dev, OVERHAULIDEA fault)
+        //{
 
-            var addFault = new FaultOrWarn
-            {
-               
-            };
 
-            return addFault;
-        }
+        //    var addFault = new FaultOrWarn
+        //    {
+
+        //    };
+
+        //    return addFault;
+        //}
 
         //#endregion
 

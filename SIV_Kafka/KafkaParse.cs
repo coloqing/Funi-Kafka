@@ -12,8 +12,8 @@ using System.Security.AccessControl;
 using Newtonsoft.Json;
 using SqlSugar.Extensions;
 using SqlSugar;
-using DataBase.Entity;
 using System.Runtime.CompilerServices;
+using DataBase;
 
 
 namespace SIV_Kafka
@@ -127,8 +127,9 @@ namespace SIV_Kafka
                     ParsingData.ProjId = projId;
                     ParsingData.TrainId = trainId;
                     ParsingData.WtdId = wtdId;
+                    ParsingData.DeviceCode = trainId + "_" + ParsingData.YZJID;
                     ParsingData.WTD_Time = Convert.ToDateTime(time);
-                    ParsingData.SV_Time = Convert.ToDateTime(svt);
+                    ParsingData.SV_Time = svt;
                     result.Add(ParsingData);
                 }
 

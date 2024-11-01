@@ -1,5 +1,4 @@
-﻿using DataBase.Entity;
-using KP.Util;
+﻿using KP.Util;
 using SqlSugar;
 using Util;
 
@@ -628,6 +627,7 @@ namespace DataBase.Entity
         /// </summary>
         public int SV_Unixtime { get; set; }
 
+        [SugarColumn(IsPrimaryKey = true, ColumnDescription = "主键ID")]
         public long Id { get; set; }
 
         /// <summary>

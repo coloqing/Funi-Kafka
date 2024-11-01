@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataBase.Entity
+namespace DataBase
 {
     /// <summary>
     /// 
@@ -18,18 +18,18 @@ namespace DataBase.Entity
         /// id
         /// </summary>
         [SugarColumn(IsPrimaryKey = true, ColumnDescription = "主键ID")]
-        public long Id {  get; set; }
+        public long Id { get; set; }
 
         /// <summary>
         /// 项目id
         /// </summary>
-        public int ProjId {  get; set; }
+        public int ProjId { get; set; }
 
         /// <summary>
         /// 列车id
         /// </summary>
-        public int LcId {  get; set; }
-       
+        public int LcId { get; set; }
+
         /// <summary>
         /// 源主机ID
         /// </summary>
@@ -274,7 +274,7 @@ namespace DataBase.Entity
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime CreateTime { get;}
+        public DateTime CreateTime { get; }
 
     }
 }

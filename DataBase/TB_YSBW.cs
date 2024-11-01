@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using SqlSugar;
 
-namespace DataBase.Entity
+namespace DataBase
 {
     ///<summary>
     ///原始报文
@@ -37,7 +37,7 @@ namespace DataBase.Entity
         /// Nullable:True
         /// </summary>           
         [SugarColumn(ColumnDescription = "创建时间")]
-        [SplitField]
+        //[SplitField]
         public DateTime? create_time { get; set; }
 
         /// <summary>

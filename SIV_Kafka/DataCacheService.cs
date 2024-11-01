@@ -16,12 +16,11 @@ namespace SIV_Kafka
 {
     public class DataCacheService : BackgroundService
     {
-        private readonly MyDbContext dbContext;
-        //static ConcurrentQueue<PartsLife> _PartsLife = new ConcurrentQueue<PartsLife>();
-        //static ConcurrentQueue<TB_PARSING_DATAS> _TB_PARSING_DATAS = new ConcurrentQueue<TB_PARSING_DATAS>();
+        private Timer _deleteTimer;
+        private Timer _faultTimer;
+
+        private readonly MyDbContext dbContext;   
         static ConcurrentQueue<KAFKA_DATA> _KAFKA_DATA = new ConcurrentQueue<KAFKA_DATA>();
-        //static ConcurrentQueue<TB_PARSING_NOWDATAS> _TB_PARSING_NEWDATAS_Update = new ConcurrentQueue<TB_PARSING_NOWDATAS>();
-        //static ConcurrentQueue<TB_PARSING_NOWDATAS> _TB_PARSING_NEWDATAS = new ConcurrentQueue<TB_PARSING_NOWDATAS>();
         static ConcurrentQueue<TB_YSBW> _TB_YSBW = new ConcurrentQueue<TB_YSBW>();
 
         public DataCacheService(MyDbContext dbContext)
@@ -34,69 +33,14 @@ namespace SIV_Kafka
             while (!stoppingToken.IsCancellationRequested)
             {
 
-                //var plList = new List<PartsLife>();
-                //for (var i = 0; i < _PartsLife.Count; i++)
-                //{
-                //    if (_PartsLife.TryDequeue(out var data))
-                //    {
-                //        plList.Add(data);
-                //    }
-                //}
-
-                //var tpdList = new List<TB_PARSING_DATAS>();
-                //for (var i = 0; i < _TB_PARSING_DATAS.Count; i++)
-                //{
-                //    if (_TB_PARSING_DATAS.TryDequeue(out var data))
-                //    {
-                //        tpdList.Add(data);
-                //    }
-                //}
-
-                //var tpnUpdateList = new List<TB_PARSING_NOWDATAS>();
-                //for (var i = 0; i < _TB_PARSING_NEWDATAS_Update.Count; i++)
-                //{
-                //    if (_TB_PARSING_NEWDATAS_Update.TryDequeue(out var data))
-                //    {
-                //        tpnUpdateList.Add(data);
-                //    }
-                //}
-
-                var addKafkaList = new List<KAFKA_DATA>();
-                for (var i = 0; i < _KAFKA_DATA.Count; i++)
-                {
-                    if (_KAFKA_DATA.TryDequeue(out var data))
-                    {
-                        addKafkaList.Add(data);
-                    }
-                }
-             
-                //var tpnList = new List<TB_PARSING_NOWDATAS>();
-                //for (var i = 0; i < _TB_PARSING_NEWDATAS.Count; i++)
-                //{
-                //    if (_TB_PARSING_NEWDATAS.TryDequeue(out var data))
-                //    {
-                //        tpnList.Add(data);
-                //    }
-                //}
-
-                var ysbw = new List<TB_YSBW>();
-                for (var i = 0; i < _TB_YSBW.Count; i++)
-                {
-                    if (_TB_YSBW.TryDequeue(out var data))
-                    {
-                        ysbw.Add(data);
-                    }
-                }
+                var addKafkaList = DequeueAll(_KAFKA_DATA);
+                var ysbw = DequeueAll(_TB_YSBW);
 
                 Stopwatch stopwatch = Stopwatch.StartNew();
-
                 try
                 {
                     //dbContext.Fastest<PartsLife>().PageSize(plList.Count).BulkCopy(plList);
-                    //dbContext.Fastest<TB_PARSING_DATAS>().PageSize(tpdList.Count).SplitTable().BulkCopy(tpdList);
-                    dbContext.Fastest<KAFKA_DATA>().PageSize(addKafkaList.Count).SplitTable().BulkCopy(addKafkaList);
-                    //dbContext.Fastest<TB_PARSING_NOWDATAS>().PageSize(tpnList.Count).BulkCopy(tpnList);
-                    //dbContext.Fastest<TB_PARSING_NOWDATAS>().BulkUpdate(tpnUpdateList);
+                    dbContext.Fastest<KAFKA_DATA>().PageSize(addKafkaList.Count).SplitTable().BulkCopy(addKafkaList);               
                     dbContext.Fastest<TB_YSBW>().PageSize(ysbw.Count).SplitTable().BulkCopy(ysbw);
                 }
                 catch (Exception e)
@@ -113,42 +57,23 @@ namespace SIV_Kafka
                 await Task.Delay(5000, stoppingToken);
             }
         }
-        public static void AddPartsLifes(List<PartsLife> list)
+
+        private static List<T> DequeueAll<T>(ConcurrentQueue<T> queue)
         {
-            foreach (var item in list)
+            var list = new List<T>();
+            while (queue.TryDequeue(out var item))
             {
-                //_PartsLife.Enqueue(item);
+                list.Add(item);
             }
+            return list;
         }
+
 
         public static void AddKAFKA_DATA(List<KAFKA_DATA> list)
         {
             foreach (var item in list)
             {
                 _KAFKA_DATA.Enqueue(item);
-            }
-        }
-
-        public static void AddTB_PARSING_DATAS(List<TB_PARSING_DATAS> list)
-        {
-            foreach (var item in list)
-            {
-                //_TB_PARSING_DATAS.Enqueue(item);
-            }
-        }
-        public static void AddUpdateTB_PARSING_NEWDATAS(List<TB_PARSING_NOWDATAS> list)
-        {
-            foreach (var item in list)
-            {
-                //_TB_PARSING_NEWDATAS_Update.Enqueue(item);
-            }
-        }
-
-        public static void AddTB_PARSING_NEWDATAS(List<TB_PARSING_NOWDATAS> list)
-        {
-            foreach (var item in list)
-            {
-                //_TB_PARSING_NEWDATAS.Enqueue(item);
             }
         }
 
