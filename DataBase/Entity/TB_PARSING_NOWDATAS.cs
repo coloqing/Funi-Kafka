@@ -636,6 +636,11 @@ namespace DataBase.Entity
         public int ProjId { get; set; }
 
         /// <summary>
+        /// 设备编码
+        /// </summary>
+        public string? DeviceCode { get; set; }
+
+        /// <summary>
         /// 列车ID
         /// </summary>
         public int TrainId { get; set; }

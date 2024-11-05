@@ -12,6 +12,7 @@ using SqlSugar;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Data;
+using System.Diagnostics.Eventing.Reader;
 using System.Net;
 using System.Reflection;
 using System.Xml.Linq;
@@ -790,6 +791,7 @@ namespace SIV_Kafka
         {
             //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
             var addFaults = new List<FaultOrWarn>();
+            var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
             var faultData = _db.Queryable<FaultOrWarn>().ToList();
             //获取线路名称
@@ -798,20 +800,54 @@ namespace SIV_Kafka
 
             foreach (var item in nowData)
             {
-                if (item.First().U_DC_In < 1000 || item.First().U_DC_In > 1800) continue;
-
-                if (item.First().InConv_Event == 53) continue;
-                if (!(item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0)) continue;
-
-
-                var yz = (item.First().U_DC_In - item.Last().U_DC_In) / item.Last().U_DC_In;
-                var isTrue = (yz * 100 <= 5) && yz * 100 >= -5;
-
-                if (!isTrue)
+                if (
+                    item.First().U_DC_In > 1000 && item.First().U_DC_In <= 1800
+                    &&item.First().InConv_Event != 53 
+                    && item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0
+                    )
                 {
 
+                    var add = AddOffsetDivisor(item.First().U_DC_In, item.Last().U_DC_In, item.First().DeviceCode,1);
+                    addIndicators.Add(add);
+
+                    var data = newdata.Where(x => x.TrainId == item.First().TrainId && x.YZJID == item.First().YZJID).ToList();
+                    var add1 = AddU_DC_InAvg(data, item.First().DeviceCode,2);
+                    addIndicators.Add(add1);
+                }
+
+                if (
+                    item.Last().U_DC_In > 1000 && item.Last().U_DC_In <= 1800
+                    &&item.Last().InConv_Event != 53 
+                    && item.Last().BC_OpMode == 0 && item.Last().Inv_OpMode == 0 && item.Last().Inconv_OpMode == 0
+                    )                
+                {
+                    var add = AddOffsetDivisor(item.Last().U_DC_In, item.First().U_DC_In, item.Last().DeviceCode,1);
+                    addIndicators.Add(add);
+
+                    var data = newdata.Where(x => x.TrainId == item.Last().TrainId && x.YZJID == item.Last().YZJID).ToList();
+                    var add1 = AddU_DC_InAvg(data, item.Last().DeviceCode,2);
+                    addIndicators.Add(add1);
+                }
+
+                if (
+                   item.First().U_DC_In <= 1000
+                   && item.First().BC_OpMode == 1 && item.First().Inv_OpMode == 1 && item.First().Inconv_OpMode == 1
+                   )
+                {
+                    var add = AddU_DC_InAbs(item.First().U_DC_In, item.First().DeviceCode,3);
+                    addIndicators.Add(add);
+                }
+
+                if (
+                   item.Last().U_DC_In <= 1000 
+                   && item.Last().BC_OpMode == 1 && item.Last().Inv_OpMode == 1 && item.Last().Inconv_OpMode == 1
+                   )
+                {
+                    var add = AddU_DC_InAbs(item.Last().U_DC_In, item.Last().DeviceCode, 3);
+                    addIndicators.Add(add);
                 }
             }
+
 
             if (addFaults.Count > 0)
             {
@@ -826,21 +862,20 @@ namespace SIV_Kafka
                 //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
                 //    }
                 //}
-                var addnum = _db.Insertable(addFaults).ExecuteCommand();
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
         }
 
-
-
         /// <summary>
-        /// 8.2 中间电压传感器故障预警
+        /// 8.2中间电压传感器故障预警模型
         /// </summary>
         /// <returns></returns>
         private async Task GetZjdycgqFault()
         {
             //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
             var addFaults = new List<FaultOrWarn>();
+            var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
             var faultData = _db.Queryable<FaultOrWarn>().ToList();
             //获取线路名称
@@ -849,19 +884,51 @@ namespace SIV_Kafka
 
             foreach (var item in nowData)
             {
-                if (item.First().U_DC_In < 1000 || item.First().U_DC_In > 1800) continue;
-
-                if (item.First().InConv_Event == 53) continue;
-                if (!(item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0)) continue;
-
-                var yz = (item.First().U_DC_Link_Inv - item.Last().U_DC_Link_Inv) / item.Last().U_DC_Link_Inv;
-                var isTrue = (yz * 100 <= 5) && yz * 100 >= -5;
-
-                if (!isTrue)
+                if (
+                    item.First().U_DC_Link_Inv > 1000 && item.First().U_DC_Link_Inv <= 1800
+                    && item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0
+                    )
                 {
+                    var add = AddOffsetDivisor(item.First().U_DC_Link_Inv, item.Last().U_DC_Link_Inv, item.First().DeviceCode, 4);
+                    addIndicators.Add(add);
 
+                    var data = newdata.Where(x => x.TrainId == item.First().TrainId && x.YZJID == item.First().YZJID).ToList();
+                    var add1 = AddU_DC_Link_InvAvg(data, item.First().DeviceCode, 5);
+                    addIndicators.Add(add1);
+                }
+
+                if (
+                    item.Last().U_DC_Link_Inv > 1000 && item.Last().U_DC_Link_Inv <= 1800
+                    && item.Last().BC_OpMode == 0 && item.Last().Inv_OpMode == 0 && item.Last().Inconv_OpMode == 0
+                    )
+                {
+                    var add = AddOffsetDivisor(item.Last().U_DC_Link_Inv, item.First().U_DC_Link_Inv, item.Last().DeviceCode, 4);
+                    addIndicators.Add(add);
+
+                    var data = newdata.Where(x => x.TrainId == item.Last().TrainId && x.YZJID == item.Last().YZJID).ToList();
+                    var add1 = AddU_DC_Link_InvAvg(data, item.Last().DeviceCode, 5);
+                    addIndicators.Add(add1);
+                }
+
+                if (
+                   item.First().U_DC_Link_Inv <= 1000
+                   && item.First().BC_OpMode == 1 && item.First().Inv_OpMode == 1 && item.First().Inconv_OpMode == 1
+                   )
+                {
+                    var add = AddU_DC_InAbs(item.First().U_DC_In, item.First().DeviceCode, 6);
+                    addIndicators.Add(add);
+                }
+
+                if (
+                   item.Last().U_DC_Link_Inv <= 1000
+                   && item.Last().BC_OpMode == 1 && item.Last().Inv_OpMode == 1 && item.Last().Inconv_OpMode == 1
+                   )
+                {
+                    var add = AddU_DC_InAbs(item.Last().U_DC_Link_Inv, item.Last().DeviceCode, 6);
+                    addIndicators.Add(add);
                 }
             }
+
 
             if (addFaults.Count > 0)
             {
@@ -876,9 +943,212 @@ namespace SIV_Kafka
                 //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
                 //    }
                 //}
-                var addnum = _db.Insertable(addFaults).ExecuteCommand();
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
+        }
+
+        /// <summary>
+        /// 8.3输入电流传感器故障预警模型
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetSrdlcgqFault()
+        {
+            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
+            var addFaults = new List<FaultOrWarn>();
+            var addIndicators = new List<Indicators_Item>();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
+            var faultData = _db.Queryable<FaultOrWarn>().ToList();
+            //获取线路名称
+            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
+            var newdata = await GetNewData(1);
+
+            foreach (var item in nowData)
+            {
+                if (
+                    item.First().InConv_DIGIN ==0
+                    && item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0
+                    )
+                {
+                    var add = AddOffsetDivisor(item.First().I_DC_In, item.Last().I_DC_In, item.First().DeviceCode, 7);
+                    addIndicators.Add(add);
+                }
+
+                if (
+                    item.Last().InConv_DIGIN == 0
+                    && item.Last().BC_OpMode == 0 && item.Last().Inv_OpMode == 0 && item.Last().Inconv_OpMode == 0
+                    )
+                {
+                    var add = AddOffsetDivisor(item.Last().I_DC_In, item.First().I_DC_In, item.Last().DeviceCode, 7);
+                    addIndicators.Add(add);
+
+                }
+
+                if (item.First().InConv_DIGIN == 1)
+                {
+                    var add = AddU_DC_InAbs(item.First().I_DC_In, item.First().DeviceCode, 8);
+                    addIndicators.Add(add);
+                }
+
+                if (item.Last().InConv_DIGIN == 1)
+                {
+                    var add = AddU_DC_InAbs(item.Last().I_DC_In, item.Last().DeviceCode, 8);
+                    addIndicators.Add(add);
+                }
+            }
+
+
+            if (addFaults.Count > 0)
+            {
+                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
+
+                //if (faultReq != null && faultReq.result_code == "200")
+                //{
+                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
+
+                //    for (int i = 0; i < addFaults.Count; i++)
+                //    {
+                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
+                //    }
+                //}
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
+                _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
+            }
+        }
+
+        /// <summary>
+        /// 8.4 输出三相电流传感器故障预警
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetSxdlcgqFault()
+        {
+            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
+            var addFaults = new List<FaultOrWarn>();
+            var addIndicators = new List<Indicators_Item>();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
+            var faultData = _db.Queryable<FaultOrWarn>().ToList();
+            //获取线路名称
+            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
+            var newdata = await GetNewData(1);
+
+            foreach (var item in nowData)
+            {
+                if (item.First().U_DC_Link_Inv > 1000 && item.First().U_DC_Link_Inv <= 1800
+                    && item.First().InConv_DIGIN == 0
+                    && item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0
+                    )
+                {
+                    var add = AddOffsetDivisor(item.First().I_L1, item.First().I_L2, item.First().DeviceCode, 9);
+                    addIndicators.Add(add);
+                }
+
+                if (
+                    item.First().U_DC_Link_Inv > 1000 && item.First().U_DC_Link_Inv <= 1800
+                    && item.Last().InConv_DIGIN == 0
+                    && item.Last().BC_OpMode == 0 && item.Last().Inv_OpMode == 0 && item.Last().Inconv_OpMode == 0
+                    )
+                {
+                    var add = AddOffsetDivisor(item.Last().I_DC_In, item.First().I_DC_In, item.Last().DeviceCode, 7);
+                    addIndicators.Add(add);
+
+                }
+
+                if (item.First().InConv_DIGIN == 1)
+                {
+                    var add = AddU_DC_InAbs(item.First().I_DC_In, item.First().DeviceCode, 8);
+                    addIndicators.Add(add);
+                }
+
+                if (item.Last().InConv_DIGIN == 1)
+                {
+                    var add = AddU_DC_InAbs(item.Last().I_DC_In, item.Last().DeviceCode, 8);
+                    addIndicators.Add(add);
+                }
+            }
+
+
+            if (addFaults.Count > 0)
+            {
+                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
+
+                //if (faultReq != null && faultReq.result_code == "200")
+                //{
+                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
+
+                //    for (int i = 0; i < addFaults.Count; i++)
+                //    {
+                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
+                //    }
+                //}
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
+                _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
+            }
+        }
+
+        /// <summary>
+        /// 偏置因子计算
+        /// </summary>
+        /// <param name="u"></param>
+        /// <param name="u1"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddOffsetDivisor(int u,int u1,string? deviceCode,int id)
+        {
+            var yz = (u - u1) * 100 / (float)u1;
+            return AddIndicators_Item(yz, deviceCode,id);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddU_DC_InAvg(List<KAFKA_DATA> data, string? deviceCode,int id)
+        {
+            var max = data.Max(x => x.U_DC_In);
+            var min = data.Min(x => x.U_DC_In);
+            var avg = data.Average(x => x.U_DC_In);
+            var yz = (max - min) * 100 / (float)avg;
+            return AddIndicators_Item(yz, deviceCode, id);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddU_DC_Link_InvAvg(List<KAFKA_DATA> data, string? deviceCode, int id)
+        {
+            var max = data.Max(x => x.U_DC_Link_Inv);
+            var min = data.Min(x => x.U_DC_Link_Inv);
+            var avg = data.Average(x => x.U_DC_Link_Inv);
+            var yz = (max - min) * 100 / (float)avg;
+            return AddIndicators_Item(yz, deviceCode, id);
+        }
+
+        /// <summary>
+        /// 零漂计算
+        /// </summary>
+        /// <param name="u"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddU_DC_InAbs(int u, string? deviceCode,int id)
+        {
+            var yz = Math.Abs(u - 0);
+            return AddIndicators_Item(yz, deviceCode, id);
+        }
+
+        private Indicators_Item AddIndicators_Item(float yz, string? deviceCode,int indicatorsId)
+        {
+            return new Indicators_Item()
+            {
+                DeviceCode = deviceCode,
+                IndicatorsId = indicatorsId,
+                Value = yz,
+                CreateTime = DateTime.Now
+            };
         }
 
         ///// <summary>
