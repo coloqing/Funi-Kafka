@@ -22,6 +22,11 @@ namespace DataBase.Entity
         public int IndicatorsId { get; set; }
 
         /// <summary>
+        /// 性能指标预警编码
+        /// </summary>
+        public string? IndicatorsCode { get; set; }
+
+        /// <summary>
         /// 设备编码
         /// </summary>
         public string? DeviceCode {  get; set; }
