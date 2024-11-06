@@ -35,7 +35,12 @@ namespace DataBase.Entity
         /// 值
         /// </summary>
         public float Value { get; set; }
-   
+
+        /// <summary>
+        /// 是否超出阈值
+        /// </summary>
+        public bool? IsThreshold { get; set; }
+
         public DateTime CreateTime { get; set; }
         
     }

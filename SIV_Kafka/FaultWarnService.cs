@@ -150,23 +150,22 @@ namespace SIV_Kafka
                 try
                 {
                     await GetWycgqFault();//8.1 网压传感器故障预警
-                    //await GetYsjFault();
-                    //await GetZfqzdFault();
-                    //await GetZljxlFault();
-                    //await GetZlmbwdFault();
-                    //await GetSbdlzFault();
-                    //await GetLwzdFault();
-                    //await GetLnqzdFault();
-                    //await GetKqzlFault();
-                    //await GetLnjcfdlFault();
+                    await GetZjdycgqFault();
+                    await GetSrdlcgqFault();
+                    await GetSxdlcgqFault();
+                    await GetSxdycgqFault();
+                    await GetScsxbphFault();
+                    await GetXdcztFault();
+                    await GetXdcdycgqFault();
+                    await GetXdcwdcgqFault();
+                    await GetLwdsFault();
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"预警失败，{ex.ToString()}");
                 }
                
-
-            }, null, TimeSpan.Zero, TimeSpan.FromMinutes(Convert.ToDouble(_AddWarnData)));
+            }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
 
             _hvacmodleTimer = new Timer(async _ =>
             {
@@ -789,13 +788,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetWycgqFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -848,19 +842,8 @@ namespace SIV_Kafka
             }
 
 
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
-
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
-
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -872,13 +855,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetZjdycgqFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -929,19 +907,8 @@ namespace SIV_Kafka
             }
 
 
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
-
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
-
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -953,13 +920,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetSrdlcgqFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -996,20 +958,8 @@ namespace SIV_Kafka
                 }
             }
 
-
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
-
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
-
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -1021,13 +971,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetSxdlcgqFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList();
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -1069,20 +1014,8 @@ namespace SIV_Kafka
                 }
             }
 
-
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
-
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
-
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -1094,13 +1027,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetSxdycgqFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList();
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -1142,20 +1070,8 @@ namespace SIV_Kafka
                 }
             }
 
-
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
-
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
-
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -1167,13 +1083,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetScsxbphFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList();
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -1192,19 +1103,38 @@ namespace SIV_Kafka
             }
 
 
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
+                _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
+            }
+        }
 
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
+        /// <summary>
+        /// 8.7 蓄电池状态异常预警
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetXdcztFault()
+        {
+            var addIndicators = new List<Indicators_Item>();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList();
+            var newdata = await GetNewData(1);
 
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
+            foreach (var item in nowData)
+            {
+                if (item.BC_OpMode == 0 && item.Inv_OpMode == 0 && item.Inconv_OpMode == 0)
+                {
+                    var addU = AddU_BatteryAvg(item.T_Battery, item.U_Battery, item.I_Battery, item.DeviceCode, "siv2022");
+                    addIndicators.Add(addU);
+
+                    var addI = AddU_BatteryAvg(item.U_Battery, item.I_Battery, item.DeviceCode, "siv2022");
+                    addIndicators.Add(addI);
+                }
+            }
+
+
+            if (addIndicators.Count > 0)
+            {
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -1216,13 +1146,8 @@ namespace SIV_Kafka
         /// <returns></returns>
         private async Task GetXdcdycgqFault()
         {
-            //EquipmentFault xfWarn1, sfWarn1, sfWarn2, hfWarn1;
-            var addFaults = new List<FaultOrWarn>();
             var addIndicators = new List<Indicators_Item>();
             var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);
-            var faultData = _db.Queryable<FaultOrWarn>().ToList();
-            //获取线路名称
-            //var XL = config.Where(x => x.concode == _lineCode).First().conval;
             var newdata = await GetNewData(1);
 
             foreach (var item in nowData)
@@ -1233,7 +1158,7 @@ namespace SIV_Kafka
                     addIndicators.Add(addU);
 
                     var data = newdata.Where(x => x.DeviceCode == item.First().DeviceCode).ToList();
-                    var add = AddU_BatteryAvg(data, item.First().T_Battery,item.First().U_Battery,item.First().DeviceCode, "");
+                    var add = AddU_BatteryAvg(data, item.First().T_Battery,item.First().U_Battery, item.First().I_Battery,item.First().DeviceCode, "");
                     addIndicators.Add(add);
                 }
 
@@ -1243,24 +1168,89 @@ namespace SIV_Kafka
                     addIndicators.Add(addU);
 
                     var data = newdata.Where(x => x.DeviceCode == item.Last().DeviceCode).ToList();
-                    var add = AddU_BatteryAvg(data,item.Last().T_Battery, item.First().U_Battery, item.Last().DeviceCode, "");
+                    var add = AddU_BatteryAvg(data,item.Last().T_Battery, item.Last().U_Battery, item.Last().I_Battery, item.Last().DeviceCode, "");
                     addIndicators.Add(add);
                 }
             }
 
-            if (addFaults.Count > 0)
+            if (addIndicators.Count > 0)
             {
-                //var faultReq = await FaultSetHttpPost(addFaults, new List<FaultOrWarn>());
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
+                _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
+            }
+        }
 
-                //if (faultReq != null && faultReq.result_code == "200")
-                //{
-                //    _logger.LogInformation($"温度异常预警推送成功，新增了{addFaults.Count}条预警");
+        /// <summary>
+        /// 8.9 蓄电池温度传感器故障预警
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetXdcwdcgqFault()
+        {
+            var addIndicators = new List<Indicators_Item>();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList().GroupBy(x => x.TrainId);   
+            var newdata = await GetNewData(1);
 
-                //    for (int i = 0; i < addFaults.Count; i++)
-                //    {
-                //        addFaults[i].SendRepId = faultReq.result_data.new_faults[i];
-                //    }
-                //}
+            foreach (var item in nowData)
+            {
+                if (item.First().BC_OpMode == 0 && item.First().Inv_OpMode == 0 && item.First().Inconv_OpMode == 0)
+                {
+                    var addU = AddOffsetDivisor(item.First().T_Battery, item.Last().T_Battery, item.First().DeviceCode, "待定");
+                    addIndicators.Add(addU);
+
+                    var data = newdata.Where(x => x.DeviceCode == item.First().DeviceCode && item.First().I_Battery < 2).ToList();
+                    var add = AddT_BatteryAvg(data, item.First().DeviceCode, "");
+                    addIndicators.Add(add);
+                }
+
+                if (item.Last().BC_OpMode == 0 && item.Last().Inv_OpMode == 0 && item.Last().Inconv_OpMode == 0)
+                {
+                    var addU = AddOffsetDivisor(item.Last().T_Battery, item.First().T_Battery, item.Last().DeviceCode, "待定");
+                    addIndicators.Add(addU);
+
+                    var data = newdata.Where(x => x.DeviceCode == item.Last().DeviceCode).ToList();
+                    var add = AddT_BatteryAvg(data, item.Last().DeviceCode, "");
+                    addIndicators.Add(add);
+                }
+            }
+
+            if (addIndicators.Count > 0)
+            {
+               
+                var addnum = _db.Insertable(addIndicators).ExecuteCommand();
+                _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
+            }
+        }
+
+        /// <summary>
+        /// 8.10 辅逆箱滤网堵塞预警组件模型
+        /// </summary>
+        /// <returns></returns>
+        private async Task GetLwdsFault()
+        {
+            var addIndicators = new List<Indicators_Item>();
+            var nowData = _db.Queryable<TB_PARSING_NOWDATAS>().ToList();
+            var tpts = _db.Queryable<T_P_T>().ToList();  
+            var newdata = await GetNewData(1);
+
+            foreach (var item in nowData)
+            {
+                if (item.I_Battery > 5) continue;
+
+                var tpt = tpts.FirstOrDefault(x => x.DeviceCode == item.DeviceCode 
+                && x.T1 <= item.T_Battery && x.T2 >= item.T_Battery 
+                && item.ActPower >= x.W1 && item.ActPower <= x.W2);
+                if (tpt == null) continue;
+               
+                var value = Math.Abs(item.T_HS_Inv_1 - tpt.Value);
+
+                if (value >= 0 && value <= 5)
+                {
+                    var add = AddIndicators_Item(value, item.DeviceCode, "siv2062");
+                }
+            }
+
+            if (addIndicators.Count > 0)
+            {
                 var addnum = _db.Insertable(addIndicators).ExecuteCommand();
                 _logger.LogInformation($"温度异常预警同步完成，新增了{addnum}条预警");
             }
@@ -1343,17 +1333,107 @@ namespace SIV_Kafka
         /// <param name="data"></param>
         /// <param name="deviceCode"></param>
         /// <returns></returns>
-        private Indicators_Item AddU_BatteryAvg(List<KAFKA_DATA> data, int t,int v, string? deviceCode, string id)
+        private Indicators_Item AddU_BatteryAvg(List<KAFKA_DATA> data, int t,int v,int i, string? deviceCode, string id)
         {
             var max = data.Max(x => x.U_Battery);
             var min = data.Min(x => x.U_Battery);
-            float uf;
-            if (t >= -45 && t< 45)
+            float uf = 0;
+
+            if (t >= -45 && t < 45)
             {
-                 uf = 116 - (float)(0.24 * (t - 20));
+                if (i<=8)
+                {
+                    uf = 116 - (float)(0.24 * (t - 20));
+                }
+
+                if(i<= 49.5 && i >8)
+                {
+                    uf = 120 - (float)(0.24 * (t - 20));
+                }
+               
             }
-           
-            var yz = (max - min) * 100 / 220;
+            if (t >= 45 && t < 60)
+            {
+                uf = uf = 116 - (float)(0.24 * (t - 20));
+            }
+
+            var yz = (max - min) * 100 / uf;
+            return AddIndicators_Item(yz, deviceCode, id);
+        }
+
+        /// <summary>
+        /// 蓄电池电压异常
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddU_BatteryAvg(int t, int v, int i, string? deviceCode, string id)
+        {
+
+            float uf = 0;
+
+            if (t >= -45 && t < 45)
+            {
+                if (i <= 8)
+                {
+                    uf = 116 - (float)(0.24 * (t - 20));
+                }
+
+                if (i <= 49.5 && i > 8)
+                {
+                    uf = 120 - (float)(0.24 * (t - 20));
+                }
+
+            }
+            if (t >= 45 && t < 60)
+            {
+                uf = 116 - (float)(0.24 * (t - 20));
+            }
+
+            var isf = v >= (uf - uf * 0.05) && v <= uf + (uf - uf * 0.05);
+
+            var yz =  uf;
+            return AddIndicators_Item(yz, deviceCode, id, isf);
+        }
+
+        /// <summary>
+        /// 蓄电池电压异常
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddU_BatteryAvg(int v, int i, string? deviceCode, string id)
+        {
+            bool? isf = null;
+
+            if (i <= 8)
+            {
+                isf = v >= 114 && v <= 118;
+            }
+
+            if (i <= 49.5 && i > 8)
+            {
+                isf = v >= 115 && v <= 125;
+            }
+
+            isf = !isf;
+
+            var yz = v;
+            return AddIndicators_Item(yz, deviceCode, id, isf);
+        }
+
+        /// <summary>
+        /// 蓄电池温度波动因子
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="deviceCode"></param>
+        /// <returns></returns>
+        private Indicators_Item AddT_BatteryAvg(List<KAFKA_DATA> data, string? deviceCode, string id)
+        {
+            var max = data.Max(x => x.T_Battery);
+            var min = data.Min(x => x.T_Battery);
+            var avg = data.Average(x => x.T_Battery);
+            var yz = (max - min) * 100 / (float)avg;
             return AddIndicators_Item(yz, deviceCode, id);
         }
 
@@ -1395,6 +1475,18 @@ namespace SIV_Kafka
                 DeviceCode = deviceCode,             
                 IndicatorsCode = indicatorsCode,
                 Value = yz,
+                CreateTime = DateTime.Now
+            };
+        }
+
+        private Indicators_Item AddIndicators_Item(float yz, string? deviceCode, string indicatorsCode,bool? isTrue)
+        {
+            return new Indicators_Item()
+            {
+                DeviceCode = deviceCode,
+                IndicatorsCode = indicatorsCode,
+                Value = yz,
+                IsThreshold = isTrue,
                 CreateTime = DateTime.Now
             };
         }
